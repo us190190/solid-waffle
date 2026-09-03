@@ -1,7 +1,7 @@
 """LangGraph nodes: Search -> Summarize -> Cite. File: app/agents/nodes.py:1"""
-import asyncio
+from typing import Dict
+
 from app.core.config import settings, has_gemini_key
-from typing import Dict, List
 
 # --- Search Node: DuckDuckGo ---
 FALLBACK_DOCS = [
@@ -16,15 +16,13 @@ FALLBACK_DOCS = [
 
 def _ddg_search(query: str, max_results: int):
     """Try DDGS (new name) then duckduckgo_search (old name). Returns list or []."""
-    for pkg in ("ddgs", "duckduckgo_search"):
-        try:
-            mod = __import__(pkg, fromlist=["DDGS"])
-            DDGS = mod.DDGS
-            with DDGS() as ddgs:
-                return list(ddgs.text(query, max_results=max_results))
-        except Exception:
-            continue
-    return []
+    try:
+        from ddgs import DDGS
+        with DDGS() as ddgs:
+            return list(ddgs.text(query, max_results=max_results))
+    except Exception as e:
+        print(f"DuckDuckGo results exception: {e}")
+        return []
 
 
 def search_node(state: Dict) -> Dict:

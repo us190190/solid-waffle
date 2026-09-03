@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 from pydantic_settings import BaseSettings
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -10,7 +11,7 @@ DATA_DIR.mkdir(exist_ok=True)
 class Settings(BaseSettings):
     google_api_key: str = ""
     db_path: str = str(DATA_DIR / "history.db")
-    gemini_model: str = "gemini-1.5-flash"
+    gemini_model: str = "gemini-3.5-flash-lite"
     max_search_results: int = 5
 
     class Config:

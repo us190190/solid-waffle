@@ -1,14 +1,16 @@
 """FastAPI entrypoint. File: app/main.py:1"""
-from app.api.routes import router
-from app.core import storage
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
+
+from app.api.routes import router
+from app.core import storage
 
 app = FastAPI(
-    title="LangGraph Research Assistant (Idea 1)",
+    title="Research Assistant",
     description="Sequential multi-agent: Search (DuckDuckGo) -> Summarize (Gemini Flash) -> Cite (Gemini Flash) + SQLite history + minimal UI",
     version="0.1.0",
 )

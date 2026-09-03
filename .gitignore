@@ -219,3 +219,4 @@ __marimo__/
 /research_assistant/.venv/
 /research_assistant/.env
 /research_assistant/data/history.db
+.idea

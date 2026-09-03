@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+/research_assistant/.venv/
+/research_assistant/.env
+/research_assistant/data/history.db

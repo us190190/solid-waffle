@@ -79,7 +79,7 @@ async def summarizer_node(state: Dict) -> Dict:
     try:
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.messages import HumanMessage, SystemMessage
-        llm = ChatGoogleGenerativeAI(model=settings.gemini_model, temperature=0.2, max_retries=2)
+        llm = ChatGoogleGenerativeAI(model=settings.gemini_model, max_retries=2)
         system = SystemMessage(
             content="You are a concise research summarizer. Synthesize documents into 3-5 bullet points answering the query. Be factual, no hallucination, cite implicitly by preserving facts.")
         human = HumanMessage(
@@ -111,7 +111,7 @@ async def citation_node(state: Dict) -> Dict:
     try:
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain_core.messages import HumanMessage, SystemMessage
-        llm = ChatGoogleGenerativeAI(model=settings.gemini_model, temperature=0.1, max_retries=2)
+        llm = ChatGoogleGenerativeAI(model=settings.gemini_model, max_retries=2)
         docs_context = "\n".join(
             [f"[{i + 1}] {d['title']} | {d['url']} | {d['content'][:600]}" for i, d in enumerate(documents)])
         system = SystemMessage(

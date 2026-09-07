@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Customer Support Triage</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Inter, system-ui, sans-serif
+        }
+
+        body {
+            margin: 0;
+            background: #0f172a;
+            color: #e2e8f0;
+            display: flex;
+            height: 100vh
+        }
+
+        #sidebar {
+            width: 360px;
+            background: #1e293b;
+            border-right: 1px solid #334155;
+            display: flex;
+            flex-direction: column
+        }
+
+        #sidebar h2 {
+            padding: 16px;
+            margin: 0;
+            border-bottom: 1px solid #334155;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        #sidebar h2 button {
+            background: #334155;
+            color: #e2e8f0;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px
+        }
+
+        #history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px
+        }
+
+        .hist-item {
+            padding: 10px 12px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer
+        }
+
+        .hist-item:hover {
+            border-color: #38bdf8
+        }
+
+        .hist-item .q {
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .hist-item .meta {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px
+        }
+
+        .pill {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 999px;
+            color: white;
+            margin-right: 4px
+        }
+
+        .pill-billing {
+            background: #8b5cf6
+        }
+
+        .pill-technical {
+            background: #0ea5e9
+        }
+
+        .pill-sales {
+            background: #10b981
+        }
+
+        .pill-neg {
+            background: #ef4444
+        }
+
+        .pill-pos {
+            background: #22c55e
+        }
+
+        .pill-neu {
+            background: #64748b
+        }
+
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column
+        }
+
+        #header {
+            padding: 18px 24px;
+            border-bottom: 1px solid #334155;
+            background: #1e293b
+        }
+
+        #header h1 {
+            margin: 0;
+            font-size: 18px
+        }
+
+        #header p {
+            margin: 6px 0 0;
+            color: #94a3b8;
+            font-size: 13px
+        }
+
+        #badge {
+            display: inline-block;
+            background: #8b5cf6;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            margin-left: 8px
+        }
+
+        #content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px
+        }
+
+        #chat {
+            height: 340px;
+            overflow-y: auto;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px
+        }
+
+        .msg {
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            max-width: 85%;
+            line-height: 1.5;
+            white-space: pre-wrap
+        }
+
+        .msg.user {
+            background: #0ea5e9;
+            color: white;
+            margin-left: auto
+        }
+
+        .msg.assistant {
+            background: #0f172a;
+            border: 1px solid #334155
+        }
+
+        .msg .meta {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-bottom: 4px
+        }
+
+        #inputRow {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 10px
+        }
+
+        #query {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: #e2e8f0;
+            font-size: 14px
+        }
+
+        #query:focus {
+            outline: none;
+            border-color: #38bdf8
+        }
+
+        button.primary {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600
+        }
+
+        button.primary:disabled {
+            opacity: 0.5
+        }
+
+        .ctrl {
+            font-size: 12px;
+            color: #94a3b8;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap
+        }
+
+        .ctrl select, .ctrl input {
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: #e2e8f0
+        }
+
+        #status {
+            font-size: 12px;
+            color: #38bdf8;
+            min-height: 18px;
+            margin: 8px 0
+        }
+
+        #tools {
+            margin-top: 12px
+        }
+
+        .tool {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            font-size: 13px
+        }
+
+        a {
+            color: #38bdf8
+        }
+
+        #health {
+            font-size: 11px;
+            color: #94a3b8
+        }
+
+        .escalated-banner {
+            background: #ef4444;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: none
+        }
+    </style>
+</head>
+<body>
+<div id="sidebar">
+    <h2>History
+        <button onclick="clearHistory()">Clear</button>
+    </h2>
+    <div id="history"></div>
+</div>
+<div id="main">
+    <div id="header">
+        <h1>Customer Support Triage <span id="badge">Supervisor → Router → Specialist → Responder</span></h1>
+        <p>LangGraph: <code>add_conditional_edges</code> router + <code>with_structured_output</code> + <code>AsyncSqliteSaver</code>
+            interrupt_before &nbsp;|&nbsp; <span id="health">checking...</span></p>
+        <p style="color:#64748b;">POST /api/support/chat (stateless: send history) vs POST /api/support/chat/stateful
+            (checkpointer) — try threads.</p>
+    </div>
+    <div id="content">
+        <div class="ctrl">
+            <label><input type="radio" name="mode" value="stateless" checked onchange="updateMode()"> Stateless</label>
+            <label><input type="radio" name="mode" value="stateful" onchange="updateMode()"> Stateful</label>
+            <label>Thread <input id="threadId" placeholder="auto" style="width:140px"/></label>
+            <button onclick="newThread()"
+                    style="padding:4px 8px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;cursor:pointer">
+                New Thread
+            </button>
+            <label>Quick:
+                <select onchange="if(this.value) qEl.value=this.value; this.value=''">
+                    <option value="">— examples —</option>
+                    <option value="I was charged twice for INV-002, need refund">Billing: charged twice INV-002</option>
+                    <option value="My dashboard is down, error 500 on login, ticket TICK-101">Technical: dashboard 500
+                        TICK-101
+                    </option>
+                    <option value="What is pricing for PROD-B? Need enterprise plan demo">Sales: pricing PROD-B</option>
+                    <option value="I am furious! This is unacceptable, I need human help now">Escalation: negative
+                        sentiment
+                    </option>
+                </select>
+            </label>
+        </div>
+        <div id="escalated" class="escalated-banner">🚨 Escalated to Human — graph paused at <code>interrupt_before=["human_handoff"]</code>.
+            Press Resume.
+        </div>
+        <div id="chat"></div>
+        <div id="inputRow">
+            <input id="query" placeholder="Type message... (e.g. I was charged twice for INV-002)"
+                   onkeydown="if(event.key==='Enter') doChat()"/>
+            <button id="btn" class="primary" onclick="doChat()">Send</button>
+            <button id="resumeBtn" class="primary" onclick="doResume()" style="background:#ef4444;display:none">Resume
+                Human Handoff
+            </button>
+        </div>
+        <div id="status"></div>
+        <div id="tools"></div>
+    </div>
+</div>
+<script>
+    const qEl = document.getElementById('query'), chatEl = document.getElementById('chat'),
+        toolsEl = document.getElementById('tools'), statusEl = document.getElementById('status'),
+        histEl = document.getElementById('history'), healthEl = document.getElementById('health'),
+        threadEl = document.getElementById('threadId');
+    let historyMsgs = []; // array of {role, content} for stateless
+    let mode = 'stateless';
+    let lastThread = null;
+
+    function updateMode() {
+        mode = document.querySelector('input[name=mode]:checked').value;
+        statusEl.textContent = 'Mode: ' + mode;
+    }
+
+    function newThread() {
+        threadEl.value = 'thread-' + Math.random().toString(36).slice(2, 6);
+        historyMsgs = [];
+        chatEl.innerHTML = '';
+        toolsEl.innerHTML = '';
+        statusEl.textContent = 'New thread: ' + threadEl.value;
+    }
+
+    async function health() {
+        try {
+            const r = await fetch('/api/health');
+            const j = await r.json();
+            healthEl.textContent = j.gemini_configured ? `Gemini ✓ (${j.model}) • ${j.checkpointer}` : `Mock mode • ${j.model} • ${j.checkpointer}`;
+            healthEl.style.color = j.gemini_configured ? '#22c55e' : '#f59e0b';
+        } catch {
+            healthEl.textContent = 'offline';
+        }
+    }
+
+    health();
+
+    function renderChat() {
+        chatEl.innerHTML = historyMsgs.map(m => `<div class="msg ${m.role}"><div class="meta">${m.role}</div>${escapeHtml(m.content)}</div>`).join('');
+        chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    function escapeHtml(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\[(\d+)\]/g, '<span class="pill pill-billing">[$1]</span>').replace(/\n/g, '<br/>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/### (.*)/g, '<h3>$1</h3>');
+    }
+
+    async function loadHistory() {
+        const r = await fetch('/api/support/history?limit=50');
+        const j = await r.json();
+        histEl.innerHTML = j.items.map(it => `<div class="hist-item" onclick="loadItem(${it.id})"><div class="q">${it.user_input.slice(0, 60)}</div><div class="meta"><span class="pill pill-${it.intent}">${it.intent}</span><span class="pill ${it.sentiment === 'negative' ? 'pill-neg' : it.sentiment === 'positive' ? 'pill-pos' : 'pill-neu'}">${it.sentiment}</span> ${new Date(it.created_at).toLocaleString()} ${it.escalated ? '🚨' : ''}</div><div style="font-size:11px;color:#64748b">${it.thread_id}</div></div>`).join('') || '<div style="padding:12px;color:#64748b;font-size:13px">No history.</div>';
+    }
+
+    loadHistory();
+
+    async function loadItem(id) {
+        const r = await fetch('/api/support/history/' + id);
+        const j = await r.json();
+        statusEl.textContent = `Loaded #${id} ${j.intent}/${j.sentiment} ${j.thread_id}`;
+        historyMsgs = [{role: 'user', content: j.user_input}, {role: 'assistant', content: j.response}];
+        renderChat();
+        toolsEl.innerHTML = '<h4>Tool Outputs</h4>' + (j.tool_outputs || []).map(t => `<div class="tool"><b>${t.tool}</b> (${t.input})<br/><code>${escapeHtml(JSON.stringify(t.output).slice(0, 500))}</code></div>`).join('');
+    }
+
+    async function clearHistory() {
+        if (!confirm('Clear all?')) return;
+        await fetch('/api/support/history', {method: 'DELETE'});
+        loadHistory();
+    }
+
+    function getThread() {
+        let t = threadEl.value.trim();
+        if (!t) {
+            t = 'thread-' + Math.random().toString(36).slice(2, 6);
+            threadEl.value = t;
+        }
+        return t;
+    }
+
+    async function doChat() {
+        const msg = qEl.value.trim();
+        if (!msg) return;
+        const thread = getThread();
+        document.getElementById('btn').disabled = true;
+        statusEl.textContent = 'Routing via supervisor...';
+        const body = {message: msg, history: historyMsgs, thread_id: thread};
+        const url = mode === 'stateful' ? '/api/support/chat/stateful' : '/api/support/chat';
+        try {
+            const r = await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            });
+            if (!r.ok) {
+                const t = await r.text();
+                throw new Error(t);
+            }
+            const j = await r.json();
+            // update
+            if (mode === 'stateless') {
+                historyMsgs.push({role: 'user', content: msg}, {role: 'assistant', content: j.response});
+            } else { // stateful keeps server side, but mirror locally
+                historyMsgs.push({role: 'user', content: msg}, {role: 'assistant', content: j.response});
+            }
+            renderChat();
+            const pillInt = `<span class="pill pill-${j.intent}">${j.intent}</span>`;
+            const pillSent = `<span class="pill ${j.sentiment === 'negative' ? 'pill-neg' : j.sentiment === 'positive' ? 'pill-pos' : 'pill-neu'}">${j.sentiment}</span>`;
+            statusEl.innerHTML = `Intent ${pillInt} Sentiment ${pillSent} conf ${j.confidence} ${j.escalated ? '🚨 escalated' : ''} — thread ${j.thread_id}`;
+            toolsEl.innerHTML = '<h4>Tool Outputs</h4>' + (j.tool_outputs || []).map(t => `<div class="tool"><b>${t.tool}</b> (${t.input})<br/><code>${escapeHtml(JSON.stringify(t.output).slice(0, 600))}</code></div>`).join('') || '<div style="color:#64748b">No tools</div>';
+            if (j.escalated) {
+                document.getElementById('escalated').style.display = 'block';
+                document.getElementById('resumeBtn').style.display = j.response.includes('interrupt') ? 'inline-block' : 'none';
+            } else {
+                document.getElementById('escalated').style.display = 'none';
+                document.getElementById('resumeBtn').style.display = 'none';
+            }
+            lastThread = j.thread_id;
+            threadEl.value = j.thread_id;
+            qEl.value = '';
+            loadHistory();
+        } catch (e) {
+            statusEl.textContent = 'Error: ' + e.message;
+        } finally {
+            document.getElementById('btn').disabled = false;
+        }
+    }
+
+    async function doResume() {
+        const thread = getThread();
+        statusEl.textContent = 'Resuming human_handoff...';
+        const r = await fetch('/api/support/chat/stateful/resume?thread_id=' + encodeURIComponent(thread), {method: 'POST'});
+        if (!r.ok) {
+            statusEl.textContent = 'Resume failed: ' + await r.text();
+            return;
+        }
+        const j = await r.json();
+        historyMsgs.push({role: 'assistant', content: j.response});
+        renderChat();
+        statusEl.innerHTML = `Resumed — <span class="pill pill-${j.intent}">${j.intent}</span> escalated 🚨`;
+        toolsEl.innerHTML = '<h4>Tool Outputs (after resume)</h4>' + (j.tool_outputs || []).map(t => `<div class="tool"><b>${t.tool}</b><br/><code>${escapeHtml(JSON.stringify(t.output).slice(0, 600))}</code></div>`).join('');
+        document.getElementById('resumeBtn').style.display = 'none';
+        document.getElementById('escalated').style.display = 'none';
+        loadHistory();
+    }
+</script>
+</body>
+</html>

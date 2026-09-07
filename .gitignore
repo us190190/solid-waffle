@@ -216,7 +216,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Intellij
+.idea
+
+# Research Assistant
 /research_assistant/.venv/
 /research_assistant/.env
-/research_assistant/data/history.db
-.idea
+
+# Customer Support Triage
+/customer_support_triage/.venv/
+/customer_support_triage/.env

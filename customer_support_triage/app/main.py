@@ -1,4 +1,5 @@
 """FastAPI entrypoint. File: app/main.py:1"""
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -9,10 +10,31 @@ from fastapi.staticfiles import StaticFiles
 from app.api.routes import router
 from app.core import storage
 
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    # startup: init main DB and ensure checkpoint DB setup
+    storage.init_db()
+    try:
+        from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+        from app.core.config import settings
+        async with AsyncSqliteSaver.from_conn_string(settings.checkpoint_db_path) as saver:
+            pass  # from_conn_string handles setup
+    except Exception as e:
+        print(f"Checkpoint setup warning: {e}")
+    try:
+        yield
+    finally:
+        # shutdown cleanup - storage uses per-request sqlite3 connections (no pool to close)
+        # checkpoint saver was closed via async with at startup; placeholder for future persistent resources
+        print("Customer Support Triage shutdown - cleanup complete")
+
+
 app = FastAPI(
     title="Customer Support Triage",
     description="Supervisor (structured output) -> Router (conditional edges) -> Specialist tools -> Responder -> HumanHandoff (AsyncSqliteSaver interrupt_before). Stateless vs stateful at POST /support/chat",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -22,19 +44,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-async def startup():
-    storage.init_db()
-    # ensure checkpoint dir exists and run setup
-    try:
-        from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
-        from app.core.config import settings
-        async with AsyncSqliteSaver.from_conn_string(settings.checkpoint_db_path) as saver:
-            pass  # from_conn_string handles setup
-    except Exception as e:
-        print(f"Checkpoint setup warning: {e}")
 
 
 app.include_router(router, prefix="/api")

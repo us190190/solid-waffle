@@ -18,6 +18,46 @@ FALLBACK_DOCS = [
 ]
 
 
+def _extract_llm_text(content) -> str:
+    """Normalize LLM response content to plain text.
+
+    Gemini via langchain-google-genai can return:
+      - str
+      - list[str]
+      - list[dict] like [{"type": "text", "text": "...", "extras": {"signature": "..."}}]
+    The previous code did `str(content)` for non-str, which leaked the
+    JSON/signature structure to the client. This extracts only the `text` values.
+    """
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, dict):
+        if isinstance(content.get("text"), str):
+            return content["text"]
+        return str(content)
+    if isinstance(content, list):
+        parts: list[str] = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif isinstance(block, dict):
+                txt = block.get("text")
+                if isinstance(txt, str):
+                    parts.append(txt)
+                elif isinstance(block.get("content"), str):
+                    parts.append(block["content"])
+            else:
+                txt = getattr(block, "text", None)
+                if isinstance(txt, str):
+                    parts.append(txt)
+                elif isinstance(getattr(block, "content", None), str):
+                    parts.append(getattr(block, "content"))
+        joined = "\n\n".join(p for p in parts if p)
+        return joined if joined else str(content)
+    return str(content)
+
+
 def _ddg_search(query: str, max_results: int):
     """Try DDGS (new name) then duckduckgo_search (old name). Returns list or []."""
     try:
@@ -86,7 +126,7 @@ async def summarizer_node(state: Dict) -> Dict:
         human = HumanMessage(
             content=f"Query: {query}\n\nDocuments:\n{docs_text}\n\nProvide 3-5 bullet summary in markdown.")
         resp = await llm.ainvoke([system, human])
-        summary = resp.content if isinstance(resp.content, str) else str(resp.content)
+        summary = _extract_llm_text(resp.content)
         return {"summary": summary}
     except Exception as e:
         return {"summary": f"**Summarization failed** (Gemini error: {str(e)[:400]}). Fallback summary:\n" + "\n".join(
@@ -118,7 +158,7 @@ async def citation_node(state: Dict) -> Dict:
         human = HumanMessage(
             content=f"Query: {query}\n\nSummary:\n{summary}\n\nDocuments:\n{docs_context}\n\nWrite final answer (200-350 words) with inline citations like [1] [2]. Then add '### References' with numbered list.")
         resp = await llm.ainvoke([system, human])
-        final = resp.content if isinstance(resp.content, str) else str(resp.content)
+        final = _extract_llm_text(resp.content)
         return {"citations": citations, "final_answer": final}
     except Exception as e:
         fallback = f"### Answer (fallback due to Gemini error: {str(e)[:300]})\n\n{summary}\n\n### References\n" + "\n".join(

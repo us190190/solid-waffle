@@ -39,6 +39,49 @@ def _extract_sku(text: str) -> str | None:
     return m.group(0) if m else None
 
 
+def _extract_llm_text(content) -> str:
+    """Normalize LLM response content to plain text.
+
+    Gemini via langchain-google-genai can return:
+      - str
+      - list[str]
+      - list[dict] like [{"type": "text", "text": "...", "extras": {"signature": "..."}}]
+    The previous code did `str(content)` for non-str, which leaked the
+    JSON/signature structure to the client. This extracts only the `text` values.
+    """
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, dict):
+        if isinstance(content.get("text"), str):
+            return content["text"]
+        return str(content)
+    if isinstance(content, list):
+        parts: list[str] = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif isinstance(block, dict):
+                txt = block.get("text")
+                if isinstance(txt, str):
+                    parts.append(txt)
+                elif isinstance(block.get("content"), str):
+                    parts.append(block["content"])
+            else:
+                # Handle objects like langchain TextContent with .text attribute
+                txt = getattr(block, "text", None)
+                if isinstance(txt, str):
+                    parts.append(txt)
+                elif isinstance(getattr(block, "content", None), str):
+                    parts.append(getattr(block, "content"))
+                elif isinstance(block, dict) and isinstance(block.get("text"), str):
+                    parts.append(block["text"])
+        joined = "\n\n".join(p for p in parts if p)
+        return joined if joined else str(content)
+    return str(content)
+
+
 # Specialist nodes use mock DB/API tools
 
 def billing_node(state: Dict) -> Dict:
@@ -132,7 +175,7 @@ async def responder_node(state: Dict) -> Dict:
         human = HumanMessage(
             content=f"User: {user_input}\n\nTool outputs:\n{tool_summary}\n\nWrite final markdown response (150-250 words).")
         resp = await llm.ainvoke([system, human])
-        text = resp.content if isinstance(resp.content, str) else str(resp.content)
+        text = _extract_llm_text(resp.content)
         return {"final_response": text, "messages": [{"role": "assistant", "content": text}]}
     except Exception as e:
         fallback = f"**{intent.title()} Support (fallback)**\n\nTool outputs:\n{tool_summary}\n\nError: {str(e)[:300]}"

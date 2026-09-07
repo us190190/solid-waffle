@@ -1,7 +1,7 @@
 # Customer Support Triage — Router + Human Handoff
 
 **Stack:** LangGraph + FastAPI + Gemini 2.0 Flash (structured output) + AsyncSqliteSaver + SQLite history + minimal UI
-**Parallel to:** `research_assistant` (sequential `search→summarize→cite`). This project demonstrates branching.
+This project demonstrates branching.
 
 ## Graph
 

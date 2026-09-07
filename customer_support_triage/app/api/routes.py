@@ -1,4 +1,5 @@
 """FastAPI routes: stateless + stateful. File: app/api/routes.py:1"""
+import sqlite3
 import uuid
 from typing import Optional
 
@@ -233,7 +234,6 @@ async def support_history_delete(item_id: int):
 
 @router.delete("/support/history")
 async def support_history_clear():
-    import sqlite3
     conn = sqlite3.connect(settings.db_path)
     conn.execute("DELETE FROM conversations")
     conn.commit()

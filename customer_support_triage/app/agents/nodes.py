@@ -3,8 +3,11 @@ import re
 from typing import Dict
 
 from app.agents.classifiers import llm_classify
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.core import mock_db
+from app.core.config import has_gemini_key, settings
 
 
 async def supervisor_node(state: Dict) -> Dict:
@@ -106,8 +109,6 @@ async def responder_node(state: Dict) -> Dict:
     user_input = state.get("user_input", "")
 
     # Build deterministic responder; use LLM if key present
-    from app.core.config import has_gemini_key, settings
-
     tool_summary = "\n".join([f"- {t['tool']}({t['input']}): {str(t['output'])[:300]}" for t in tool_outputs[-4:]])
 
     if not has_gemini_key():
@@ -125,9 +126,6 @@ async def responder_node(state: Dict) -> Dict:
         return {"final_response": body, "messages": [{"role": "assistant", "content": body}]}
 
     try:
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        from langchain_core.messages import HumanMessage, SystemMessage
-
         llm = ChatGoogleGenerativeAI(model=settings.gemini_model, max_retries=2)
         system = SystemMessage(
             content=f"You are a {intent} support specialist. Be concise, helpful, use tool outputs as facts. Sentiment is {sentiment}. If sentiment negative, offer human escalation. End with next-step question.")

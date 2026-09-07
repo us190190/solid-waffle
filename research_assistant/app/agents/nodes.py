@@ -1,6 +1,10 @@
 """LangGraph nodes: Search -> Summarize -> Cite. File: app/agents/nodes.py:1"""
 from typing import Dict
 
+from ddgs import DDGS
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 from app.core.config import settings, has_gemini_key
 
 # --- Search Node: DuckDuckGo ---
@@ -17,7 +21,6 @@ FALLBACK_DOCS = [
 def _ddg_search(query: str, max_results: int):
     """Try DDGS (new name) then duckduckgo_search (old name). Returns list or []."""
     try:
-        from ddgs import DDGS
         with DDGS() as ddgs:
             return list(ddgs.text(query, max_results=max_results))
     except Exception as e:
@@ -77,8 +80,6 @@ async def summarizer_node(state: Dict) -> Dict:
         return {"summary": mock_summary}
 
     try:
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        from langchain_core.messages import HumanMessage, SystemMessage
         llm = ChatGoogleGenerativeAI(model=settings.gemini_model, max_retries=2)
         system = SystemMessage(
             content="You are a concise research summarizer. Synthesize documents into 3-5 bullet points answering the query. Be factual, no hallucination, cite implicitly by preserving facts.")
@@ -109,8 +110,6 @@ async def citation_node(state: Dict) -> Dict:
         return {"citations": citations, "final_answer": mock_answer}
 
     try:
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        from langchain_core.messages import HumanMessage, SystemMessage
         llm = ChatGoogleGenerativeAI(model=settings.gemini_model, max_retries=2)
         docs_context = "\n".join(
             [f"[{i + 1}] {d['title']} | {d['url']} | {d['content'][:600]}" for i, d in enumerate(documents)])

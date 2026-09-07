@@ -1,12 +1,15 @@
 """FastAPI routes: research + storage + streaming. File: app/api/routes.py:1"""
 import asyncio
 import json
+import sqlite3
+
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
+
 from app.core import storage
 from app.core.config import settings, has_gemini_key
 from app.graph.builder import graph
 from app.models.schemas import ResearchRequest, ResearchResponse, HealthResponse
-from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import StreamingResponse
 
 router = APIRouter()
 
@@ -86,9 +89,6 @@ async def history_delete(item_id: int):
 @router.delete("/history")
 async def history_clear():
     # delete all via direct conn
-    import sqlite3
-    from pathlib import Path
-    from app.core.config import settings
     conn = sqlite3.connect(settings.db_path)
     conn.execute("DELETE FROM researches")
     conn.commit()

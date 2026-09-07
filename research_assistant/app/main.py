@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
 from app.core import storage
+from app.core.config import has_gemini_key, settings
 
 
 @asynccontextmanager
@@ -58,5 +59,4 @@ async def serve_ui():
 @app.get("/health")
 async def root_health():
     # also expose without /api prefix for convenience
-    from app.core.config import settings, has_gemini_key
     return {"status": "ok", "gemini_configured": has_gemini_key(), "model": settings.gemini_model}

@@ -6,9 +6,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from app.api.routes import router
 from app.core import storage
+from app.core.config import has_gemini_key, settings
 
 
 @asynccontextmanager
@@ -16,8 +18,6 @@ async def lifespan(application: FastAPI):
     # startup: init main DB and ensure checkpoint DB setup
     storage.init_db()
     try:
-        from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
-        from app.core.config import settings
         async with AsyncSqliteSaver.from_conn_string(settings.checkpoint_db_path) as saver:
             pass  # from_conn_string handles setup
     except Exception as e:
@@ -63,6 +63,5 @@ async def serve_ui():
 
 @app.get("/health")
 async def root_health():
-    from app.core.config import settings, has_gemini_key
     return {"status": "ok", "gemini_configured": has_gemini_key(), "model": settings.gemini_model,
             "checkpointer": "AsyncSqliteSaver"}

@@ -1,6 +1,8 @@
 """Intent + sentiment classifier with structured output. File: app/agents/classifiers.py:1"""
 from typing import Dict, List
 
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 from app.core.config import settings, has_gemini_key
 from app.models.schemas import ClassificationResult
 
@@ -54,8 +56,6 @@ async def llm_classify(user_input: str, history: List[Dict] | None = None) -> Cl
         return keyword_classify(user_input, history)
 
     try:
-        from langchain_google_genai import ChatGoogleGenerativeAI
-
         llm = ChatGoogleGenerativeAI(model=settings.gemini_model, max_retries=2)
         structured = llm.with_structured_output(ClassificationResult)
         history_text = ""

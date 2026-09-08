@@ -10,6 +10,7 @@ from app.core import storage
 from app.core.config import settings, has_gemini_key
 from app.graph.builder import graph
 from app.models.schemas import ResearchRequest, ResearchResponse, HealthResponse
+from app.models.state import ResearchState
 
 router = APIRouter()
 
@@ -23,7 +24,8 @@ async def health():
 async def research(req: ResearchRequest):
     query = req.query.strip()
     # Run LangGraph sequentially
-    result = await graph.ainvoke({"query": query, "documents": [], "summary": "", "citations": [], "final_answer": ""})
+    initial_state = ResearchState(query=query, documents=[], summary="", citations=[], final_answer="")
+    result = await graph.ainvoke(initial_state)
     documents = result.get("documents", [])
     summary = result.get("summary", "")
     final_answer = result.get("final_answer", "")
@@ -50,8 +52,9 @@ async def research_stream(q: str = Query(..., min_length=3, max_length=500)):
 
     async def gen():
         try:
+            initial_state = ResearchState(query=q, documents=[], summary="", citations=[], final_answer="")
             async for event in graph.astream(
-                    {"query": q, "documents": [], "summary": "", "citations": [], "final_answer": ""},
+                    initial_state,
                     stream_mode="values"):
                 payload = json.dumps(event, ensure_ascii=False, default=str)
                 yield f"data: {payload}\n\n"

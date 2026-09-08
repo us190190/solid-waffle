@@ -8,9 +8,10 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.core import mock_db
 from app.core.config import has_gemini_key, settings
+from app.models.state import SupportState
 
 
-async def supervisor_node(state: Dict) -> Dict:
+async def supervisor_node(state: SupportState) -> Dict:
     user_input = state.get("user_input", "")
     messages = state.get("messages", [])
     history = [{"role": m.get("role", "user"), "content": m.get("content", "")} for m in messages] if messages else []
@@ -84,7 +85,7 @@ def _extract_llm_text(content) -> str:
 
 # Specialist nodes use mock DB/API tools
 
-def billing_node(state: Dict) -> Dict:
+def billing_node(state: SupportState) -> Dict:
     user_input = state.get("user_input", "")
     outputs = []
     invoice_id = _extract_invoice_id(user_input)
@@ -103,7 +104,7 @@ def billing_node(state: Dict) -> Dict:
     return {"tool_outputs": outputs, "messages": [{"role": "assistant", "content": summary}]}
 
 
-def technical_node(state: Dict) -> Dict:
+def technical_node(state: SupportState) -> Dict:
     user_input = state.get("user_input", "")
     outputs = []
     ticket_id = _extract_ticket_id(user_input)
@@ -121,7 +122,7 @@ def technical_node(state: Dict) -> Dict:
     return {"tool_outputs": outputs, "messages": [{"role": "assistant", "content": summary}]}
 
 
-def sales_node(state: Dict) -> Dict:
+def sales_node(state: SupportState) -> Dict:
     user_input = state.get("user_input", "")
     outputs = []
     sku = _extract_sku(user_input)
@@ -145,7 +146,7 @@ def sales_node(state: Dict) -> Dict:
     return {"tool_outputs": outputs, "messages": [{"role": "assistant", "content": summary}]}
 
 
-async def responder_node(state: Dict) -> Dict:
+async def responder_node(state: SupportState) -> Dict:
     intent = state.get("intent", "technical")
     sentiment = state.get("sentiment", "neutral")
     tool_outputs = state.get("tool_outputs", [])
@@ -182,7 +183,7 @@ async def responder_node(state: Dict) -> Dict:
         return {"final_response": fallback, "messages": [{"role": "assistant", "content": fallback}]}
 
 
-def human_handoff_node(state: Dict) -> Dict:
+def human_handoff_node(state: SupportState) -> Dict:
     intent = state.get("intent", "unknown")
     user_input = state.get("user_input", "")
     msg = (

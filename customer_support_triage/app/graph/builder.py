@@ -6,11 +6,11 @@ from app.agents.nodes import supervisor_node, billing_node, technical_node, sale
 from app.models.state import SupportState
 
 
-def intent_router(state: dict) -> str:
+def intent_router(state: SupportState) -> str:
     return state.get("intent", "technical")
 
 
-def escalation_router(state: dict) -> str:
+def escalation_router(state: SupportState) -> str:
     if state.get("escalated"):
         return "handoff"
     # also route if sentiment negative and intent requires human

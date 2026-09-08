@@ -57,7 +57,7 @@ async def llm_classify(user_input: str, history: List[Dict] | None = None) -> Cl
 
     try:
         llm = ChatGoogleGenerativeAI(model=settings.gemini_model, max_retries=2)
-        structured = llm.with_structured_output(ClassificationResult)
+        structured_llm = llm.with_structured_output(ClassificationResult)
         history_text = ""
         if history:
             history_text = "\n".join([f"{m.get('role')}: {m.get('content')}" for m in history[-5:]])
@@ -73,7 +73,7 @@ Rules:
 - sentiment: positive / neutral / negative (negative if angry/frustrated/escalation)
 - confidence 0-1
 - reasoning: one sentence."""
-        result: ClassificationResult = await structured.ainvoke(prompt)
+        result: ClassificationResult = await structured_llm.ainvoke(prompt)
         # clamp confidence
         result.confidence = max(0.0, min(1.0, result.confidence))
         # Guard: if LLM says negative but user_input has no explicit NEGATIVE_KW nor strong escalation phrase, downgrade to neutral to avoid false escalation

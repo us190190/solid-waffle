@@ -10,6 +10,7 @@ from app.core import storage
 from app.core.config import settings, has_gemini_key
 from app.graph.builder import graph, build_stateful_graph
 from app.models.schemas import ChatRequest, ChatResponse, HealthResponse
+from app.models.state import SupportState
 
 router = APIRouter()
 
@@ -38,18 +39,10 @@ async def support_chat(req: ChatRequest):
     history_msgs = _history_to_messages(req.history)
 
     # Build state for stateless graph
-    initial = {
-        "messages": history_msgs,
-        "user_input": message,
-        "intent": "technical",
-        "sentiment": "neutral",
-        "confidence": 0.0,
-        "tool_outputs": [],
-        "final_response": "",
-        "escalated": False,
-        "thread_id": thread_id,
-    }
-    result = await graph.ainvoke(initial)
+    initial_state = SupportState(messages=history_msgs, user_input=message, intent="technical",
+                                 sentiment="neutral", confidence=0.0, tool_outputs=[],
+                                 final_response="", escalated=False, thread_id=thread_id)
+    result = await graph.ainvoke(initial_state)
 
     intent = result.get("intent", "technical")
     sentiment = result.get("sentiment", "neutral")
@@ -93,21 +86,13 @@ async def support_chat_stateful(req: ChatRequest):
     history_msgs = _history_to_messages(req.history)
     # For stateful, history is ideally loaded from checkpointer, but we accept supplied history for first turn
 
-    initial = {
-        "messages": history_msgs,
-        "user_input": message,
-        "intent": "technical",
-        "sentiment": "neutral",
-        "confidence": 0.0,
-        "tool_outputs": [],
-        "final_response": "",
-        "escalated": False,
-        "thread_id": thread_id,
-    }
+    initial_state = SupportState(messages=history_msgs, user_input=message, intent="technical",
+                                 sentiment="neutral", confidence=0.0, tool_outputs=[],
+                                 final_response="", escalated=False, thread_id=thread_id)
 
     async with AsyncSqliteSaver.from_conn_string(settings.checkpoint_db_path) as checkpointer:
         graph_stateful = build_stateful_graph(checkpointer)
-        result = await graph_stateful.ainvoke(initial, config=config)
+        result = await graph_stateful.ainvoke(initial_state, config=config)
 
         # Handle interrupt_before human_handoff: result will contain __interrupt__ in newer langgraph
         # If interrupted, retrieve pending state and complete manually via resume logic

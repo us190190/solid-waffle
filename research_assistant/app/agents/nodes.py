@@ -6,6 +6,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.core.config import settings, has_gemini_key
+from app.models.state import ResearchState
 
 # --- Search Node: DuckDuckGo ---
 FALLBACK_DOCS = [
@@ -68,7 +69,7 @@ def _ddg_search(query: str, max_results: int):
         return []
 
 
-def search_node(state: Dict) -> Dict:
+def search_node(state: ResearchState) -> Dict:
     """Uses DDGS().text() to fetch documents. No API key required. Falls back to curated docs if offline."""
     query = state.get("query", "").strip()
     if not query:
@@ -107,7 +108,7 @@ def search_node(state: Dict) -> Dict:
 
 
 # --- Summarizer Node: Gemini Flash ---
-async def summarizer_node(state: Dict) -> Dict:
+async def summarizer_node(state: ResearchState) -> Dict:
     query = state.get("query", "")
     documents = state.get("documents", [])
     docs_text = "\n\n".join(
@@ -134,7 +135,7 @@ async def summarizer_node(state: Dict) -> Dict:
 
 
 # --- Citation Node: Gemini Flash ---
-async def citation_node(state: Dict) -> Dict:
+async def citation_node(state: ResearchState) -> Dict:
     query = state.get("query", "")
     summary = state.get("summary", "")
     documents = state.get("documents", [])

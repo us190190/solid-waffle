@@ -4,10 +4,11 @@ Multi-app repository of **LangGraph + FastAPI applications**, each demonstrating
 
 ## Applications
 
-| App                                                | Pattern                    | Port | Description                                                                                   |
-|----------------------------------------------------|----------------------------|------|-----------------------------------------------------------------------------------------------|
-| [research_assistant](research_assistant)           | Sequential chain           | 8000 | Search (DuckDuckGo) → Summarize (Gemini) → Cite (Gemini) + SQLite history                     |
-| [customer_support_triage](customer_support_triage) | Router + Human-in-the-loop | 8001 | Supervisor (structured output) → Specialist → Responder → Escalation/Handoff with checkpoints |
+| App                                                | Pattern                    | Port | Description                                                                                     |
+|----------------------------------------------------|----------------------------|------|-------------------------------------------------------------------------------------------------|
+| [research_assistant](research_assistant)           | Sequential chain           | 8000 | Search (DuckDuckGo) → Summarize (Gemini) → Cite (Gemini) + SQLite history                       |
+| [customer_support_triage](customer_support_triage) | Router + Human-in-the-loop | 8001 | Supervisor (structured output) → Specialist → Responder → Escalation/Handoff with checkpoints   |
+| [content_creation_studio](content_creation_studio) | Reflection Loop (Cycle)    | 8002 | Writer → Critic (score <8 loop max 3) → Editor → Human Approval (interrupt_before) + SSE stream |
 
 ## Quick Start
 
@@ -29,6 +30,15 @@ cd customer_support_triage
 pip install -r requirements.txt
 cp .env.example .env  # add GOOGLE_API_KEY (mock fallback works without)
 uvicorn app.main:app --reload --port 8001
+```
+
+### content_creation_studio
+
+```bash
+cd content_creation_studio
+pip install -r requirements.txt
+cp .env.example .env  # add GOOGLE_API_KEY (mock fallback works without)
+uvicorn app.main:app --reload --port 8002
 ```
 
 Open `http://localhost:<port>/` for UI, `/docs` for Swagger.
@@ -65,7 +75,12 @@ solid-waffle/
 │   ├── .env.example
 │   ├── README.md
 │   └── app/
-└── customer_support_triage/     # Router + human handoff app
+├── customer_support_triage/     # Router + human handoff app
+│   ├── requirements.txt
+│   ├── .env.example
+│   ├── README.md
+│   └── app/
+└── content_creation_studio/     # Reflection loop app
     ├── requirements.txt
     ├── .env.example
     ├── README.md

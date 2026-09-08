@@ -227,3 +227,7 @@ __marimo__/
 # Customer Support Triage
 /customer_support_triage/.venv/
 /customer_support_triage/.env
+
+# Content Creation Studio
+/content_creation_studio/.venv/
+/content_creation_studio/.env

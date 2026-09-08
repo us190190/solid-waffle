@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Content Creation Studio — Reflection Loop</title>
+    <style>
+        :root {
+            --bg: #0f0f12;
+            --card: #1a1a1f;
+            --border: #2a2a33;
+            --accent: #7c3aed;
+            --accent2: #06b6d4;
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --success: #10b981;
+            --warn: #f59e0b
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text)
+        }
+
+        .wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px
+        }
+
+        h1 {
+            font-size: 28px;
+            margin: 0 0 6px
+        }
+
+        .sub {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 18px
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns:1fr 1fr;
+            gap: 16px
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns:1fr
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--muted);
+            margin: 8px 0 4px
+        }
+
+        textarea, input, select {
+            width: 100%;
+            background: #111113;
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 0;
+            cursor: pointer;
+            font-weight: 600
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: #fff
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text)
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600
+        }
+
+        .badge-pending {
+            background: #27272a;
+            color: var(--muted)
+        }
+
+        .badge-running {
+            background: #1e3a5f;
+            color: #60a5fa
+        }
+
+        .badge-await {
+            background: #3f2a0a;
+            color: var(--warn);
+            border: 1px solid #a16207
+        }
+
+        .badge-done {
+            background: #064e3b;
+            color: var(--success)
+        }
+
+        .draft {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            margin: 10px 0;
+            background: #111113
+        }
+
+        .draft h4 {
+            margin: 0 0 6px;
+            font-size: 14px;
+            color: #c4b5fd
+        }
+
+        .score {
+            font-weight: 700
+        }
+
+        .feedback {
+            color: var(--muted);
+            font-size: 13px;
+            margin: 6px 0
+        }
+
+        .suggestions {
+            font-size: 12px;
+            color: #a5b4fc
+        }
+
+        .final {
+            border: 2px solid var(--success);
+            background: #0a1a14
+        }
+
+        .log {
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--muted);
+            white-space: pre-wrap
+        }
+
+        .diagram {
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            background: #0a0a0f;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px dashed var(--border)
+        }
+
+        a {
+            color: #a78bfa
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>✍️ Content Creation Studio</h1>
+    <div class="sub">Reflection Loop — Writer → Critic (score ≥8 or max 3) → Editor → Human Approval &nbsp;|&nbsp; Port
+        8002 &nbsp;|&nbsp; <a href="/docs">Swagger</a> <a href="/health">Health</a></div>
+
+    <div class="diagram">START → writer → critic ──reflect_router──→ writer (if score&lt;8 && iter&lt;3) ↻ cycle<br>
+        └──→ editor → human_approval (interrupt_before) → END<br>
+        Threshold=8, Max=3, Guard prevents infinite loop. SSE streams drafts via polling.
+    </div>
+
+    <div class="grid" style="margin-top:16px">
+        <div class="card">
+            <h3 style="margin:0 0 8px">Create Content</h3>
+            <label>Prompt (free-form)</label>
+            <textarea id="prompt"
+                      placeholder="e.g. Write a blog post about LangGraph reflection loops for AI engineers who want self-correcting agents..."></textarea>
+            <label>Tone (free-form, optional)</label>
+            <input id="tone" placeholder="professional, casual, witty, dramatic..."/>
+            <label>Content Type (free-form, optional)</label>
+            <input id="ctype" placeholder="blog, tweet, story, email, landing page..."/>
+            <div class="row">
+                <label style="flex:1">Max Iterations <select id="maxIter">
+                    <option value="">default (3)</option>
+                    <option>1</option>
+                    <option>2</option>
+                    <option>3</option>
+                    <option>4</option>
+                    <option>5</option>
+                </select></label>
+                <label style="flex:1">Threshold <select id="thresh">
+                    <option value="">default (8)</option>
+                    <option>5</option>
+                    <option>6</option>
+                    <option>7</option>
+                    <option>8</option>
+                    <option>9</option>
+                </select></label>
+            </div>
+            <div class="row">
+                <button class="btn btn-primary" onclick="createJob()">Create & Stream</button>
+                <button class="btn btn-ghost" onclick="loadHistory()">History</button>
+                <button class="btn btn-ghost" onclick="clearHistory()">Clear</button>
+            </div>
+            <div id="createOut" class="log" style="margin-top:10px"></div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin:0 0 8px">Stream / Job Status</h3>
+            <div id="jobMeta" class="log">No job yet. Create one to start streaming.</div>
+            <div id="streamOut"></div>
+            <div id="finalBox" style="margin-top:12px"></div>
+            <div class="row" id="approveRow" style="display:none">
+                <button class="btn btn-success" onclick="approve(true)">Approve ✅</button>
+                <button class="btn btn-ghost" onclick="approve(false)">Reject ✖</button>
+            </div>
+            <label id="editLabel" style="display:none">Edit final before approve (optional)
+                <textarea id="editBox" style="min-height:100px"></textarea>
+            </label>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+        <h3 style="margin:0 0 8px">History</h3>
+        <div id="historyOut" class="log">Click History to load.</div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+        <h4 style="margin:0 0 6px">API Cheatsheet</h4>
+        <div class="log">POST /api/studio/create {prompt, tone?, content_type?, max_iterations?, critic_threshold?} →
+            202 {job_id}
+            GET /api/studio/{job_id} → status + drafts
+            GET /api/studio/{job_id}/stream → SSE (polls DB every 0.5s)
+            POST /api/studio/{job_id}/approve {approved:true, edits?:string} → resume HITL
+            GET /api/studio/{job_id}/state → checkpoint snapshot
+            GET /api/studio/history?limit=&offset=
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentJob = null, es = null;
+
+    async function createJob() {
+        const prompt = document.getElementById('prompt').value.trim();
+        if (!prompt || prompt.length < 3) {
+            alert('Prompt must be 3+ chars');
+            return
+        }
+        const body = {prompt};
+        const tone = document.getElementById('tone').value.trim();
+        if (tone) body.tone = tone;
+        const ct = document.getElementById('ctype').value.trim();
+        if (ct) body.content_type = ct;
+        const mi = document.getElementById('maxIter').value;
+        if (mi) body.max_iterations = parseInt(mi);
+        const th = document.getElementById('thresh').value;
+        if (th) body.critic_threshold = parseInt(th);
+        document.getElementById('createOut').textContent = 'Creating...';
+        document.getElementById('streamOut').innerHTML = '';
+        document.getElementById('finalBox').innerHTML = '';
+        const r = await fetch('/api/studio/create', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const j = await r.json();
+        document.getElementById('createOut').textContent = JSON.stringify(j, null, 2);
+        if (j.job_id) {
+            currentJob = j.job_id;
+            streamJob(j.job_id);
+            pollStatus(j.job_id);
+        }
+    }
+
+    function badge(status) {
+        const m = {
+            pending: 'badge-pending',
+            running: 'badge-running',
+            awaiting_approval: 'badge-await',
+            completed: 'badge-done',
+            failed: 'badge-pending'
+        };
+        return `<span class="badge ${m[status] || 'badge-pending'}">${status}</span>`;
+    }
+
+    async function pollStatus(id) {
+        const r = await fetch('/api/studio/' + id);
+        const j = await r.json();
+        document.getElementById('jobMeta').innerHTML = `Job <b>${id}</b> ${badge(j.status)} iter ${j.iteration}/${j.max_iterations} threshold ${j.critic_threshold} score ${j.score ?? '-'}<br><small>${j.prompt.slice(0, 120)}</small>`;
+        if (j.status === 'awaiting_approval') {
+            document.getElementById('approveRow').style.display = 'flex';
+            document.getElementById('editLabel').style.display = 'block';
+            document.getElementById('editBox').value = j.final_content || '';
+        } else if (j.status === 'completed') {
+            document.getElementById('approveRow').style.display = 'none';
+        }
+        if (j.status === 'running' || j.status === 'pending' || j.status === 'awaiting_approval') setTimeout(() => pollStatus(id), 1200);
+    }
+
+    function streamJob(id) {
+        if (es) es.close();
+        const out = document.getElementById('streamOut');
+        out.innerHTML = '';
+        es = new EventSource('/api/studio/' + id + '/stream');
+        es.addEventListener('draft', e => {
+            const d = JSON.parse(e.data);
+            const div = document.createElement('div');
+            div.className = 'draft';
+            div.innerHTML = `<h4>Iteration ${d.iteration} ${d.score != null ? `<span class="score">— Score ${d.score}/10 ${d.score >= 8 ? '✅' : '↻'}</span>` : ''}</h4>
+      <div style="white-space:pre-wrap;font-size:13px;max-height:300px;overflow:auto">${esc(d.draft || '')}</div>
+      ${d.feedback ? `<div class="feedback">Feedback: ${esc(d.feedback)}</div>` : ''}
+      ${d.suggestions?.length ? `<div class="suggestions">Suggestions: ${esc(d.suggestions.join(' • '))}</div>` : ''}`;
+            out.appendChild(div);
+        });
+        es.addEventListener('final', e => {
+            const d = JSON.parse(e.data);
+            const box = document.getElementById('finalBox');
+            box.innerHTML = `<div class="draft final"><h4>Final (awaiting approval) — score ${d.score ?? '-'}</h4><div style="white-space:pre-wrap;font-size:13px">${esc(d.final_content || '')}</div></div>`;
+            document.getElementById('editBox').value = d.final_content || '';
+            document.getElementById('approveRow').style.display = 'flex';
+            document.getElementById('editLabel').style.display = 'block';
+        });
+        es.addEventListener('completed', e => {
+            const d = JSON.parse(e.data);
+            document.getElementById('finalBox').innerHTML = `<div class="draft final"><h4>Completed ✅</h4><div style="white-space:pre-wrap">${esc(d.final_content || '')}</div></div>`;
+        });
+        es.onmessage = e => {
+            if (e.data === '[DONE]') {
+                es.close();
+            }
+        };
+        es.onerror = () => {
+        };
+    }
+
+    function esc(s) {
+        return (s || '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[c]));
+    }
+
+    async function approve(ok) {
+        if (!currentJob) return;
+        const edits = document.getElementById('editBox').value;
+        const body = {approved: ok};
+        if (ok && edits) body.edits = edits;
+        const r = await fetch('/api/studio/' + currentJob + '/approve', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const j = await r.json();
+        alert(JSON.stringify(j, null, 2));
+        pollStatus(currentJob);
+    }
+
+    async function loadHistory() {
+        const r = await fetch('/api/studio/history?limit=20');
+        const j = await r.json();
+        document.getElementById('historyOut').innerHTML = j.items.map(it => `${badge(it.status)} <b>${it.job_id}</b> iter ${it.iteration} score ${it.score ?? '-'} — ${esc(it.prompt.slice(0, 80))} <a href="#" onclick="currentJob='${it.job_id}';pollStatus('${it.job_id}');streamJob('${it.job_id}');return false">open</a>`).join('<br>') || 'empty';
+    }
+
+    async function clearHistory() {
+        if (!confirm('Clear all jobs?')) return;
+        await fetch('/api/studio/history', {method: 'DELETE'});
+        loadHistory();
+    }
+</script>
+</body>
+</html>

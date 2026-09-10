@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Code Assistant Team — Parallel Collaboration</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --border: #334155;
+            --accent: #0ea5e9;
+            --accent2: #8b5cf6;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --success: #10b981;
+            --warn: #f59e0b;
+            --coder: #0ea5e9;
+            --tester: #8b5cf6;
+            --docs: #10b981
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text)
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px
+        }
+
+        h1 {
+            font-size: 26px;
+            margin: 0 0 6px
+        }
+
+        .sub {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 14px
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns:1fr 1fr;
+            gap: 16px
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns:1fr
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--muted);
+            margin: 8px 0 4px
+        }
+
+        textarea, input, select {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 0;
+            cursor: pointer;
+            font-weight: 600
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: #fff
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text)
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600
+        }
+
+        .badge-pending {
+            background: #27272a;
+            color: var(--muted)
+        }
+
+        .badge-running {
+            background: #1e3a5f;
+            color: #60a5fa
+        }
+
+        .badge-await {
+            background: #3f2a0a;
+            color: var(--warn);
+            border: 1px solid #a16207
+        }
+
+        .badge-done {
+            background: #064e3b;
+            color: var(--success)
+        }
+
+        .pill {
+            display: inline-flex;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            margin-right: 6px
+        }
+
+        .pill-coder {
+            background: var(--coder)
+        }
+
+        .pill-tester {
+            background: var(--tester)
+        }
+
+        .pill-docs {
+            background: var(--docs)
+        }
+
+        .kanban {
+            display: grid;
+            grid-template-columns:1fr 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px
+        }
+
+        @media (max-width: 900px) {
+            .kanban {
+                grid-template-columns:1fr
+            }
+        }
+
+        .col {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+            background: #0f172a;
+            min-height: 180px
+        }
+
+        .col h4 {
+            margin: 0 0 8px;
+            font-size: 13px
+        }
+
+        .artifact {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+            margin: 8px 0;
+            background: #1e293b;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 220px;
+            overflow: auto
+        }
+
+        .log {
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--muted);
+            white-space: pre-wrap
+        }
+
+        .diagram {
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            background: #0a0f1e;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px dashed var(--border)
+        }
+
+        a {
+            color: #7dd3fc
+        }
+
+        .ws-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--muted);
+            display: inline-block;
+            margin-right: 6px
+        }
+
+        .ws-dot.on {
+            background: var(--success)
+        }
+
+        .ws-dot.off {
+            background: #ef4444
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px
+        }
+
+        .tab {
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            font-size: 13px
+        }
+
+        .tab.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent)
+        }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>🤖 Code Assistant Team</h1>
+    <div class="sub">Parallel Collaboration — Planner → Send fan-out → Coder/Tester/DocsWriter (subgraphs +
+        operator.add) → Reviewer (HITL) &nbsp;|&nbsp; Port 8003 &nbsp;|&nbsp; <a href="/docs">Swagger</a> <a
+                href="/health">Health</a> <span id="wsDot" class="ws-dot"></span><span id="wsLabel">WS offline</span>
+    </div>
+
+    <div class="diagram">START → planner ──Send([coder,test,docs])──► coder subgraph (generate→exec→retry×2) ─┐<br>
+        ├──► tester subgraph (generate→exec→retry×2) ─┼─► reviewer ──interrupt_before──► human_approval → END (HITL)<br>
+        └──► docs_writer subgraph (generate→lint) ─────┘ Reducers: Annotated[list, operator.add] • Tools: PythonREPL +
+        FileSystem
+    </div>
+
+    <div class="grid" style="margin-top:16px">
+        <div class="card">
+            <h3 style="margin:0 0 8px">Create Job</h3>
+            <label>User Story</label>
+            <textarea id="story"
+                      placeholder="e.g. As a developer I want a FastAPI endpoint that returns hello world with validation and tests"></textarea>
+            <label>Language</label>
+            <select id="lang">
+                <option value="python">python</option>
+                <option value="javascript">javascript</option>
+                <option value="typescript">typescript</option>
+                <option value="go">go</option>
+                <option value="java">java</option>
+            </select>
+            <div class="row">
+                <button class="btn btn-primary" onclick="createJob()">Create & Watch</button>
+                <button class="btn btn-ghost" onclick="loadHistory()">History</button>
+                <button class="btn btn-ghost" onclick="clearHistory()">Clear</button>
+            </div>
+            <div id="createOut" class="log" style="margin-top:10px"></div>
+            <div id="jobMeta" class="log" style="margin-top:10px">No job yet.</div>
+        </div>
+        <div class="card">
+            <h3 style="margin:0 0 8px">Job Status / Approval</h3>
+            <div id="statusBox" class="log">waiting...</div>
+            <div id="finalBox" style="margin-top:10px"></div>
+            <div class="row" id="approveRow" style="display:none">
+                <button class="btn btn-success" onclick="approve(true)">Approve ✅</button>
+                <button class="btn btn-ghost" onclick="approve(false)">Reject ✖</button>
+            </div>
+            <label id="editLabel" style="display:none">Edit final before approve<textarea id="editBox"
+                                                                                          style="min-height:120px"></textarea></label>
+            <div class="tabs" id="tabs" style="display:none">
+                <div class="tab active" onclick="showTab('code')">Code</div>
+                <div class="tab" onclick="showTab('test')">Tests</div>
+                <div class="tab" onclick="showTab('docs')">Docs</div>
+                <div class="tab" onclick="showTab('final')">Final</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+        <h3 style="margin:0 0 8px">Live Team — <span id="wsInfo" class="log">WebSocket + SSE fallback</span></h3>
+        <div class="kanban">
+            <div class="col"><h4><span class="pill pill-coder">Coder</span> <span id="coderStatus"
+                                                                                  class="log">idle</span></h4>
+                <div id="coderOut"></div>
+            </div>
+            <div class="col"><h4><span class="pill pill-tester">Tester</span> <span id="testerStatus"
+                                                                                    class="log">idle</span></h4>
+                <div id="testerOut"></div>
+            </div>
+            <div class="col"><h4><span class="pill pill-docs">Docs</span> <span id="docsStatus" class="log">idle</span>
+            </h4>
+                <div id="docsOut"></div>
+            </div>
+        </div>
+        <div id="execOut" class="log" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+        <h3 style="margin:0 0 8px">History</h3>
+        <div id="historyOut" class="log">Click History to load.</div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+        <h4 style="margin:0 0 6px">API Cheatsheet</h4>
+        <div class="log">POST /api/codegen {user_story, language} → 202 {job_id}
+            GET /api/codegen/{job_id} → status + artifacts
+            GET /api/codegen/{job_id}/stream → SSE fallback
+            WS /api/ws/codegen/{job_id} → real-time agent status
+            POST /api/codegen/{job_id}/approve {approved, edits?}
+            GET /api/codegen/{job_id}/state → checkpoint
+            GET /api/codegen/history
+        </div>
+    </div>
+</div>
+<script>
+    let currentJob = null, ws = null, es = null;
+
+    function badge(s) {
+        const m = {
+            pending: 'badge-pending',
+            running: 'badge-running',
+            awaiting_approval: 'badge-await',
+            completed: 'badge-done',
+            failed: 'badge-pending'
+        };
+        return `<span class="badge ${m[s] || 'badge-pending'}">${s}</span>`
+    }
+
+    function esc(s) {
+        return (s || '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[c]))
+    }
+
+    function showTab(name) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active'); /* could filter */
+    }
+
+    async function createJob() {
+        const user_story = document.getElementById('story').value.trim();
+        if (!user_story || user_story.length < 10) {
+            alert('user_story >=10 chars');
+            return
+        }
+        const language = document.getElementById('lang').value;
+        document.getElementById('createOut').textContent = 'Creating...';
+        resetKanban();
+        const r = await fetch('/api/codegen', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({user_story, language})
+        });
+        const j = await r.json();
+        document.getElementById('createOut').textContent = JSON.stringify(j, null, 2);
+        if (j.job_id) {
+            currentJob = j.job_id;
+            pollStatus(j.job_id);
+            connectWS(j.job_id);
+            connectSSE(j.job_id);
+        }
+    }
+
+    function resetKanban() {
+        document.getElementById('coderOut').innerHTML = '';
+        document.getElementById('testerOut').innerHTML = '';
+        document.getElementById('docsOut').innerHTML = '';
+        document.getElementById('finalBox').innerHTML = '';
+        document.getElementById('execOut').textContent = '';
+        document.getElementById('coderStatus').textContent = 'queued';
+        document.getElementById('testerStatus').textContent = 'queued';
+        document.getElementById('docsStatus').textContent = 'queued';
+    }
+
+    async function pollStatus(id) {
+        const r = await fetch('/api/codegen/' + id);
+        const j = await r.json();
+        document.getElementById('jobMeta').innerHTML = `Job <b>${id}</b> ${badge(j.status)} lang ${esc(j.language)}<br><small>${esc(j.user_story.slice(0, 120))}</small><br>Tasks: ${j.tasks?.length || 0} | Code:${j.code_artifacts?.length || 0} Tester:${j.test_artifacts?.length || 0} Docs:${j.docs_artifacts?.length || 0}`;
+        document.getElementById('statusBox').innerHTML = `Status ${badge(j.status)}<br>Agent statuses: ${(j.agent_status || []).map(a => a.agent + ':' + a.status).join(' • ') || '-'}`;
+        renderArtifacts(j);
+        if (j.status === 'awaiting_approval') {
+            document.getElementById('approveRow').style.display = 'flex';
+            document.getElementById('editLabel').style.display = 'block';
+            document.getElementById('tabs').style.display = 'flex';
+            document.getElementById('editBox').value = j.final_output || '';
+            document.getElementById('finalBox').innerHTML = `<div class="artifact" style="border-color:var(--success)"><b>Final (awaiting approval)</b>\n${esc((j.final_output || '').slice(0, 5000))}</div>`
+        } else if (j.status === 'completed') {
+            document.getElementById('approveRow').style.display = 'none';
+            document.getElementById('finalBox').innerHTML = `<div class="artifact" style="border-color:var(--success)"><b>Completed ✅</b>\n${esc((j.final_output || '').slice(0, 5000))}</div>`
+        }
+        if (j.status === 'running' || j.status === 'pending' || j.status === 'awaiting_approval') setTimeout(() => pollStatus(id), 1500);
+    }
+
+    function renderArtifacts(j) {
+        if (j.code_artifacts) {
+            document.getElementById('coderOut').innerHTML = j.code_artifacts.map(a => `<div class="artifact"><b>${esc(a.file)}</b> [${esc(a.language)}]\n${esc(a.content.slice(0, 1200))}</div>`).join('') || '';
+            if (j.code_artifacts.length) document.getElementById('coderStatus').textContent = 'done ' + j.code_artifacts.length;
+        }
+        if (j.test_artifacts) {
+            document.getElementById('testerOut').innerHTML = j.test_artifacts.map(a => `<div class="artifact"><b>${esc(a.file)}</b>\n${esc(a.content.slice(0, 1000))}</div>`).join('') || '';
+            if (j.test_artifacts.length) document.getElementById('testerStatus').textContent = 'done ' + j.test_artifacts.length;
+        }
+        if (j.docs_artifacts) {
+            document.getElementById('docsOut').innerHTML = j.docs_artifacts.map(a => `<div class="artifact"><b>${esc(a.file)}</b>\n${esc(a.content.slice(0, 1000))}</div>`).join('') || '';
+            if (j.docs_artifacts.length) document.getElementById('docsStatus').textContent = 'done ' + j.docs_artifacts.length;
+        }
+        if (j.exec_results) {
+            document.getElementById('execOut').textContent = (j.exec_results || []).map(e => `${e.agent} ${e.file}: ${e.result?.status} ${(e.result?.output || '').slice(0, 200)} ${e.result?.error ? 'ERR:' + e.result.error.slice(0, 120) : ''}`).join('\n');
+        }
+    }
+
+    function connectWS(id) {
+        if (ws) try {
+            ws.close()
+        } catch (e) {
+        }
+        const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(`${proto}//${location.host}/api/ws/codegen/${id}`);
+        ws.onopen = () => {
+            document.getElementById('wsDot').classList.add('on');
+            document.getElementById('wsLabel').textContent = 'WS connected';
+            document.getElementById('wsInfo').textContent = 'WebSocket live'
+        };
+        ws.onmessage = e => {
+            try {
+                const m = JSON.parse(e.data);
+                if (m.type === 'agent_status') {
+                    const a = m.agent_status;
+                    if (a.agent === 'coder') document.getElementById('coderStatus').textContent = a.status;
+                    if (a.agent === 'tester') document.getElementById('testerStatus').textContent = a.status;
+                    if (a.agent === 'docs_writer') document.getElementById('docsStatus').textContent = a.status;
+                }
+                if (m.type === 'artifacts') { /* will be reflected via poll */
+                    pollStatus(id);
+                }
+                if (m.type === 'final' || m.type === 'awaiting_approval') {
+                    pollStatus(id);
+                }
+                if (m.type === 'completed') {
+                    document.getElementById('wsInfo').textContent = 'Completed';
+                    pollStatus(id);
+                }
+            } catch (err) {
+            }
+        };
+        ws.onclose = () => {
+            document.getElementById('wsDot').classList.remove('on');
+            document.getElementById('wsDot').classList.add('off');
+            document.getElementById('wsLabel').textContent = 'WS closed - SSE fallback';
+        };
+        ws.onerror = () => {
+            document.getElementById('wsLabel').textContent = 'WS error - SSE fallback';
+        };
+    }
+
+    function connectSSE(id) {
+        if (es) es.close();
+        es = new EventSource('/api/codegen/' + id + '/stream');
+        es.addEventListener('coder', e => {
+            const d = JSON.parse(e.data);
+            const div = document.createElement('div');
+            div.className = 'artifact';
+            div.innerHTML = `<b>${esc(d.file)}</b>\n${esc(d.content.slice(0, 1000))}`;
+            document.getElementById('coderOut').appendChild(div);
+            document.getElementById('coderStatus').textContent = 'streaming';
+        });
+        es.addEventListener('tester', e => {
+            const d = JSON.parse(e.data);
+            const div = document.createElement('div');
+            div.className = 'artifact';
+            div.innerHTML = `<b>${esc(d.file)}</b>\n${esc(d.content.slice(0, 1000))}`;
+            document.getElementById('testerOut').appendChild(div);
+        });
+        es.addEventListener('docs_writer', e => {
+            const d = JSON.parse(e.data);
+            const div = document.createElement('div');
+            div.className = 'artifact';
+            div.innerHTML = `<b>${esc(d.file)}</b>\n${esc(d.content.slice(0, 1000))}`;
+            document.getElementById('docsOut').appendChild(div);
+        });
+        es.addEventListener('final', e => {
+            const d = JSON.parse(e.data);
+            document.getElementById('finalBox').innerHTML = `<div class="artifact" style="border-color:var(--warn)"><b>Final</b>\n${esc(d.final_output.slice(0, 4000))}</div>`;
+        });
+        es.onmessage = e => {
+            if (e.data === '[DONE]') es.close();
+        };
+    }
+
+    async function approve(ok) {
+        if (!currentJob) return;
+        const edits = document.getElementById('editBox').value;
+        const body = {approved: ok};
+        if (ok && edits) body.edits = edits;
+        const r = await fetch('/api/codegen/' + currentJob + '/approve', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const j = await r.json();
+        alert(JSON.stringify(j, null, 2));
+        pollStatus(currentJob);
+    }
+
+    async function loadHistory() {
+        const r = await fetch('/api/codegen/history?limit=20');
+        const j = await r.json();
+        document.getElementById('historyOut').innerHTML = j.items.map(it => `${badge(it.status)} <b>${it.job_id}</b> ${esc(it.language)} — ${esc(it.user_story.slice(0, 70))} <a href="#" onclick="currentJob='${it.job_id}';pollStatus('${it.job_id}');connectWS('${it.job_id}');connectSSE('${it.job_id}');return false">open</a>`).join('<br>') || 'empty';
+    }
+
+    async function clearHistory() {
+        if (!confirm('Clear all?')) return;
+        await fetch('/api/codegen/history', {method: 'DELETE'});
+        loadHistory();
+    }
+</script>
+</body>
+</html>

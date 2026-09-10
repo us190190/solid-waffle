@@ -114,6 +114,35 @@ Every app **must** follow this layout:
 - Node functions: `async def node_name(state: StateName) -> dict`
 - Return partial state updates (only changed fields)
 - Use structured output via `with_structured_output(PydanticModel)` for classifiers
+- **SOLID — Facade + SRP:** `app/agents/nodes.py` must be a thin re-export facade; each agent lives in its own file
+  (`planner.py`, `coder.py`, `tester.py`, `docs_writer.py`, `reviewer.py`, `common.py`). No business logic inside
+  `nodes.py`.
+- **Imports:** All imports strictly at file top (PEP8 E402). No inline `import` inside functions; inject via factory
+  (`get_llm()`) at top. Remove unused imports (`re`, `io`, `os` if unused).
+- **Schemas:** `TasksSchema` / structured-output models live in `app/models/schemas.py` (with `TaskItem`), not inside
+  node functions. Nodes import from schemas.
+
+### SOLID Standards (applies to all apps)
+
+- **SRP:** One class/file per reason to change. `tools.py` delegates to `tools/filesystem.py` + `tools/python_repl.py`;
+  `storage.py` delegates to `repositories/job_repository.py`; per-agent files.
+- **OCP:** Extend via registry, not `if/elif` chains. Use `app/core/language_registry.py` (`LANGUAGE_EXT`,
+  `get_code_file_name`) and strategy maps for executors. New language/agent requires adding entry, not editing core
+  `if`.
+- **DIP (Light):** Depend on `app/core/ports.py` Protocols (`FileSystemPort`, `ExecutorPort`, `LLMProvider`) + factory
+  `get_llm()` / `get_settings()`. No direct `ChatGoogleGenerativeAI()` inside node without factory; no direct `sqlite3`
+  in routes (use repository).
+- **ISP:** Worker state segregated: `WorkerState` (task + reducers) separate from `CodeAssistantState` to avoid fat
+  interface.
+- **Imports & Schemas:** See above — enforced via `ruff check --select F401,I,E402`.
+
+### Core
+
+- `app/core/ports.py` — light DIP Protocols
+- `app/core/language_registry.py` — OCP registry for `LANGUAGE_EXT` and file naming (`get_code_file_name`,
+  `get_test_file_name`, `get_docs_file_name`)
+- `app/core/repositories/job_repository.py` — SRP persistence (called by `storage.py` facade)
+- `app/core/config.py` — `SettingsConfigDict` (not legacy `class Config`)
 
 ---
 

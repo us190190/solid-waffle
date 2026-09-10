@@ -9,6 +9,7 @@ Multi-app repository of **LangGraph + FastAPI applications**, each demonstrating
 | [research_assistant](research_assistant)           | Sequential chain           | 8000 | Search (DuckDuckGo) → Summarize (Gemini) → Cite (Gemini) + SQLite history                       |
 | [customer_support_triage](customer_support_triage) | Router + Human-in-the-loop | 8001 | Supervisor (structured output) → Specialist → Responder → Escalation/Handoff with checkpoints   |
 | [content_creation_studio](content_creation_studio) | Reflection Loop (Cycle)    | 8002 | Writer → Critic (score <8 loop max 3) → Editor → Human Approval (interrupt_before) + SSE stream |
+| [code_assistant_team](code_assistant_team)         | Parallel Collaboration     | 8003 | Planner → Send fan-out → Coder/Tester/DocsWriter (subgraphs + reducers) → Reviewer + WS/SSE     |
 
 ## Quick Start
 
@@ -39,6 +40,15 @@ cd content_creation_studio
 pip install -r requirements.txt
 cp .env.example .env  # add GOOGLE_API_KEY (mock fallback works without)
 uvicorn app.main:app --reload --port 8002
+```
+
+### code_assistant_team
+
+```bash
+cd code_assistant_team
+pip install -r requirements.txt
+cp .env.example .env  # add GOOGLE_API_KEY (mock fallback works without)
+uvicorn app.main:app --reload --port 8003
 ```
 
 Open `http://localhost:<port>/` for UI, `/docs` for Swagger.
@@ -81,10 +91,15 @@ solid-waffle/
 │   ├── README.md
 │   └── app/
 └── content_creation_studio/     # Reflection loop app
-    ├── requirements.txt
-    ├── .env.example
-    ├── README.md
-    └── app/
+     ├── requirements.txt
+     ├── .env.example
+     ├── README.md
+     └── app/
+ └── code_assistant_team/         # Parallel collaboration app
+     ├── requirements.txt
+     ├── .env.example
+     ├── README.md
+     └── app/
 ```
 
 ## License

@@ -227,7 +227,15 @@ __marimo__/
 # Customer Support Triage
 /customer_support_triage/.venv/
 /customer_support_triage/.env
+/customer_support_triage/data/*.db
 
 # Content Creation Studio
 /content_creation_studio/.venv/
 /content_creation_studio/.env
+/content_creation_studio/data/*.db
+
+# Code Assistant Team
+/code_assistant_team/.venv/
+/code_assistant_team/.env
+/code_assistant_team/data/*.db
+/code_assistant_team/data/workspace/

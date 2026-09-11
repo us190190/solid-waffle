@@ -62,3 +62,17 @@ uvicorn app.main:app --reload --port 8003
 - Subgraphs each with internal retry loop (coder/tester loop on tool error, max 2)
 - Tool-bound agents (PythonREPL exec even in mock, FileSystem sandbox)
 - WebSocket broadcast via ConnectionManager + SSE polling fallback
+
+## TODO
+
+- Provide download link for code genrated in a zip file or provide better UX for viewing the code content of workspace
+- Use sub graphs instead of for loop within coder/tester/docs nodes alongwith a score for each output so that the best
+  output is selected
+- buttons on UX are not working at approval step
+- the UX gets stuck when workkflow is interrupted and then resumed (common pattern whenever vanilla alert of HTML is
+  used)
+- ensure thread safe connection manager with pooling for WebSocket, SSE, DB, etc.
+- eval agent
+- langsmith for observation
+- UX the scrollable sections are not working properly (e.g. it does not scroll to the bottom when new job is created and
+  the content is added on scroll)

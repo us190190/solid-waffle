@@ -239,3 +239,8 @@ __marimo__/
 /code_assistant_team/.env
 /code_assistant_team/data/*.db
 /code_assistant_team/data/workspace/
+
+# Travel Planner
+/travel_planner/.venv/
+/travel_planner/.env
+/travel_planner/data/*.db

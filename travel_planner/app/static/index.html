@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Travel Planner — Hierarchical Teams</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --text: #0f172a;
+            --muted: #64748b;
+            --primary: #2563eb;
+            --primary-600: #1d4ed8;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --radius: 12px;
+            --shadow: 0 1px 3px rgba(0, 0, 0, .08), 0 4px 12px rgba(0, 0, 0, .05)
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+            color: var(--text);
+            background: var(--bg);
+            line-height: 1.5
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(255, 255, 255, .9);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border)
+        }
+
+        .topbar-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #2563eb, #06b6d4);
+            display: grid;
+            place-items: center;
+            color: white;
+            font-weight: 800
+        }
+
+        .brand h1 {
+            font-size: 15px;
+            margin: 0;
+            line-height: 1.1
+        }
+
+        .brand p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        .health {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--card);
+            font-size: 13px
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #94a3b8
+        }
+
+        .dot.ok {
+            background: #10b981;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, .15)
+        }
+
+        .dot.bad {
+            background: #ef4444
+        }
+
+        .container {
+            max-width: 1180px;
+            margin: 20px auto;
+            padding: 0 16px;
+            display: grid;
+            grid-template-columns:380px 1fr;
+            gap: 18px
+        }
+
+        @media (max-width: 980px) {
+            .container {
+                grid-template-columns:1fr
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow)
+        }
+
+        .card-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px
+        }
+
+        .card-header h2 {
+            font-size: 14px;
+            margin: 0;
+            letter-spacing: .02em;
+            text-transform: uppercase;
+            color: #334155
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: #f1f5f9;
+            color: #334155;
+            white-space: nowrap
+        }
+
+        .badge.ok {
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+            color: #065f46
+        }
+
+        .badge.await {
+            background: #fffbeb;
+            border-color: #fde68a;
+            color: #92400e
+        }
+
+        .badge.live {
+            font-size: 10px;
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1e40af
+        }
+
+        .card-body {
+            padding: 16px 18px
+        }
+
+        label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #334155;
+            display: block;
+            margin: 12px 0 6px
+        }
+
+        label:first-child {
+            margin-top: 0
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 14px;
+            background: white;
+            outline: none
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .15)
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 70px;
+            font-family: ui-monospace, monospace;
+            font-size: 12px
+        }
+
+        .grid2 {
+            display: grid;
+            grid-template-columns:1fr 1fr;
+            gap: 10px
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .btn {
+            appearance: none;
+            border: 0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: .15s
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-600)
+        }
+
+        .btn-primary:disabled {
+            opacity: .6;
+            cursor: not-allowed
+        }
+
+        .btn-ghost {
+            background: white;
+            border: 1px solid var(--border);
+            color: #334155
+        }
+
+        .btn-ghost:hover {
+            background: #f8fafc
+        }
+
+        .btn-sm {
+            padding: 7px 10px;
+            font-size: 12px;
+            border-radius: 8px
+        }
+
+        .hint {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 6px
+        }
+
+        .prefs-grid {
+            display: grid;
+            grid-template-columns:1fr 1fr;
+            gap: 8px;
+            margin-top: 6px
+        }
+
+        .pref {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+            user-select: none;
+            font-size: 13px
+        }
+
+        .pref input {
+            width: auto
+        }
+
+        .chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 8px
+        }
+
+        .chip {
+            font-size: 11px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #f1f5f9;
+            border: 1px solid var(--border);
+            cursor: pointer
+        }
+
+        .chip:hover {
+            background: #e0e7ff;
+            border-color: #c7d2fe
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 14px 0
+        }
+
+        .tabs {
+            display: flex;
+            gap: 6px;
+            border-bottom: 1px solid var(--border);
+            padding: 0 4px;
+            margin: 0 -4px 12px;
+            overflow: auto
+        }
+
+        .tab {
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            white-space: nowrap
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-color: var(--primary)
+        }
+
+        .tabpane {
+            display: none
+        }
+
+        .tabpane.active {
+            display: block
+        }
+
+        .flight, .hotel {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 10px 0;
+            background: white
+        }
+
+        .flight-main, .hotel-main {
+            flex: 1
+        }
+
+        .flight-meta, .hotel-meta {
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        .price {
+            font-weight: 800;
+            font-size: 16px;
+            color: #0f172a
+        }
+
+        .stars {
+            color: #f59e0b
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 18px
+        }
+
+        .timeline:before {
+            content: "";
+            position: absolute;
+            left: 6px;
+            top: 6px;
+            bottom: 6px;
+            width: 2px;
+            background: #e2e8f0;
+            border-radius: 99px
+        }
+
+        .day {
+            position: relative;
+            margin: 14px 0;
+            padding-left: 12px
+        }
+
+        .day:before {
+            content: "";
+            position: absolute;
+            left: -11px;
+            top: 6px;
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, .2)
+        }
+
+        .day h4 {
+            margin: 0 0 6px;
+            font-size: 13px
+        }
+
+        .activity {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 10px;
+            margin: 6px 0;
+            background: #f8fafc;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px
+        }
+
+        .empty {
+            padding: 28px;
+            text-align: center;
+            color: var(--muted)
+        }
+
+        .empty b {
+            color: var(--text)
+        }
+
+        .history-item {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin: 8px 0;
+            cursor: pointer;
+            background: white
+        }
+
+        .history-item:hover {
+            border-color: #93c5fd;
+            box-shadow: 0 1px 6px rgba(37, 99, 235, .12)
+        }
+
+        .history-item.active {
+            outline: 2px solid var(--primary)
+        }
+
+        .kv {
+            font-size: 11px;
+            color: var(--muted);
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .toast {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .toast-msg {
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: #0f172a;
+            color: white;
+            font-size: 13px;
+            box-shadow: var(--shadow);
+            max-width: 360px
+        }
+
+        .toast-msg.err {
+            background: #991b1b
+        }
+
+        .toast-msg.ok {
+            background: #065f46
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, .4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin .7s linear infinite
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            max-height: 320px;
+            overflow: auto
+        }
+
+        #map {
+            height: 260px;
+            border-radius: 10px;
+            border: 1px solid var(--border)
+        }
+
+        .budget-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .budget-val {
+            font-weight: 700;
+            min-width: 90px;
+            text-align: right
+        }
+
+        .typeahead {
+            position: relative
+        }
+
+        .suggest {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 100%;
+            z-index: 15;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            margin-top: 6px;
+            max-height: 240px;
+            overflow: auto;
+            display: none;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, .12)
+        }
+
+        .suggest.open {
+            display: block
+        }
+
+        .suggest-item {
+            padding: 9px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            border-bottom: 1px solid #f1f5f9
+        }
+
+        .suggest-item:last-child {
+            border-bottom: 0
+        }
+
+        .suggest-item:hover, .suggest-item.active {
+            background: #eff6ff
+        }
+
+        .suggest-item b {
+            color: #0f172a
+        }
+
+        .suggest-item small {
+            color: #64748b;
+            white-space: nowrap
+        }
+
+        .global-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px
+        }
+
+        .global-overlay-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, .55);
+            backdrop-filter: blur(6px)
+        }
+
+        .global-overlay-card {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            padding: 22px 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid #e2e8f0
+        }
+
+        .overlay-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+            margin: 0 auto 14px
+        }
+
+        .overlay-title {
+            font-weight: 800;
+            font-size: 15px;
+            color: #0f172a
+        }
+
+        .overlay-sub {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 6px;
+            line-height: 1.5
+        }
+
+        .overlay-steps {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap
+        }
+
+        .overlay-steps span {
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0
+        }
+
+        .card.loading {
+            position: relative;
+            overflow: hidden
+        }
+
+        .card.loading::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, .65);
+            backdrop-filter: blur(1px);
+            border-radius: 12px;
+            z-index: 6
+        }
+
+        .card.loading .btn {
+            pointer-events: none
+        }
+
+        .btn .spinner {
+            width: 14px;
+            height: 14px;
+            border-width: 2px
+        }
+
+        .btn-loading {
+            position: relative;
+            color: transparent !important
+        }
+
+        .btn-loading .spinner {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            margin: -7px 0 0 -7px
+        }
+
+        .pulse {
+            animation: pulse 1.5s infinite
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1
+            }
+            50% {
+                opacity: .6
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="topbar">
+    <div class="topbar-inner">
+        <div class="brand">
+            <div class="logo">✈</div>
+            <div>
+                <h1>Travel Planner — Hierarchical Teams</h1>
+                <p>TripManager → Flight → Hotel → Itinerary → Summarize • Live OSM + OpenSky</p>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+            <div id="health" class="health"><span id="healthDot" class="dot"></span><span
+                    id="healthText">Checking…</span></div>
+            <a class="btn btn-ghost btn-sm" href="/docs" target="_blank">API Docs</a>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div style="display:flex;flex-direction:column;gap:18px">
+        <div class="card" id="createCard">
+            <div class="card-header"><h2>✦ Create trip</h2><span class="badge">POST /api/trips</span></div>
+            <div class="card-body">
+                <div class="grid2">
+                    <div class="typeahead"><label>Origin — type to search all airports</label><input id="origin"
+                                                                                                     placeholder="e.g. DEL — Delhi"
+                                                                                                     autocomplete="off">
+                        <div id="originSuggest" class="suggest"></div>
+                        <div class="hint" id="originHint"></div>
+                    </div>
+                    <div class="typeahead"><label>Destination</label><input id="destination"
+                                                                            placeholder="e.g. GOA — Goa"
+                                                                            autocomplete="off">
+                        <div id="destinationSuggest" class="suggest"></div>
+                        <div class="hint" id="destinationHint"></div>
+                    </div>
+                </div>
+                <div class="hint">Start typing city, name or IATA (e.g. “Mumbai”, “BOM”, “Chennai”). 90+ airports
+                    indexed — live geocoding via Nominatim.
+                </div>
+                <div class="grid2">
+                    <div><label>Start date</label><input id="start_date" type="date"></div>
+                    <div><label>End date</label><input id="end_date" type="date"></div>
+                </div>
+                <label>Budget — total trip (₹)</label>
+                <div class="budget-wrap">
+                    <input id="budget" type="range" min="5000" max="100000" step="1000" value="20000"
+                           style="flex:1"><span class="budget-val" id="budgetVal">₹20,000</span>
+                </div>
+                <div class="grid2">
+                    <div><label>Travelers</label><input id="travelers" type="number" min="1" max="10" value="2"></div>
+                    <div><label>Thread ID (optional)</label><input id="threadId" placeholder="auto e.g. trip-xxxx">
+                    </div>
+                </div>
+                <label>Preferences</label>
+                <div class="prefs-grid">
+                    <label class="pref"><input type="checkbox" id="prefNonstop" checked> Non-stop flights</label>
+                    <label class="pref"><input type="checkbox" id="prefCheap"> Prefer cheap</label>
+                    <label class="pref"><input type="checkbox" id="prefLuxury"> Luxury hotels</label>
+                    <label class="pref"><input type="checkbox" id="prefCulture"> Culture focus</label>
+                </div>
+                <label style="margin-top:10px">Interests</label>
+                <div class="row" id="interestChips">
+                    <label class="pref" style="flex:0"><input type="checkbox" value="culture" class="interest"> culture</label>
+                    <label class="pref" style="flex:0"><input type="checkbox" value="nature" class="interest">
+                        nature</label>
+                    <label class="pref" style="flex:0"><input type="checkbox" value="adventure" class="interest">
+                        adventure</label>
+                    <label class="pref" style="flex:0"><input type="checkbox" value="leisure" class="interest"> leisure</label>
+                </div>
+                <details style="margin-top:10px">
+                    <summary style="cursor:pointer;font-size:12px;color:var(--muted)">Advanced JSON</summary>
+                    <textarea id="prefsRaw">{"prefer_nonstop": true}</textarea>
+                    <div class="hint">Synced from toggles. Edit manually if needed.</div>
+                </details>
+                <div style="display:flex;gap:8px;margin-top:14px">
+                    <button class="btn btn-primary" id="createBtn" onclick="createTrip()" style="flex:1">Create trip —
+                        live search
+                    </button>
+                    <button class="btn btn-ghost" onclick="fillExample()">Example</button>
+                </div>
+                <div class="hint">Live data: <span class="badge live">Nominatim</span> <span
+                        class="badge live">Overpass</span> <span class="badge live">OpenSky</span> • No mock fallback —
+                    needs internet
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>↻ Refine / Resume</h2><span class="badge">checkpoint with thread_id</span>
+            </div>
+            <div class="card-body">
+                <div id="selectedTripInfo" class="empty" style="padding:12px">Select a trip from history or create one.
+                    Refine re-runs <b>Filter → Rank</b> only (cheap) then resumes before <code>summarize</code>.
+                </div>
+                <label>Trip ID</label><input id="refineId" placeholder="e.g. 3">
+                <label>New budget (optional)</label><input id="refineBudget" type="number" placeholder="e.g. 9000">
+                <label>Refinement query</label><input id="refineQuery" placeholder="cheaper flights, luxury hotels…">
+                <div class="chips">
+                    <span class="chip" onclick="setQuery('cheaper flights, budget friendly')">cheaper</span>
+                    <span class="chip" onclick="setQuery('luxury hotels with pool and spa')">luxury</span>
+                    <span class="chip" onclick="setQuery('add nature and adventure activities')">add nature</span>
+                    <span class="chip" onclick="setQuery('nonstop direct flights only')">nonstop</span>
+                </div>
+                <label>Preferences patch (JSON)</label><textarea id="refinePrefs">{"prefer_cheap": true}</textarea>
+                <div style="display:flex;gap:8px;margin-top:10px">
+                    <button id="refineBtn" class="btn btn-primary" style="flex:1" onclick="refineTrip()">Refine —
+                        filter+rank
+                    </button>
+                    <button id="resumeBtn" class="btn btn-ghost" onclick="resumeTrip()">Resume</button>
+                </div>
+                <div class="hint">Resume uses <code>POST /api/trips/{id}/resume?thread_id=</code> if you paused at
+                    <code>summarize</code>.
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2>History</h2>
+                <div class="row">
+                    <button id="historyRefreshBtn" class="btn btn-ghost btn-sm" onclick="loadHistory()">↻ Refresh
+                    </button>
+                    <button id="historyClearBtn" class="btn btn-ghost btn-sm" onclick="clearHistory()">Clear</button>
+                </div>
+            </div>
+            <div class="card-body" id="historyBody">
+                <div class="empty">No trips yet.</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:18px">
+        <div class="card" id="resultCard" style="min-height:320px">
+            <div class="card-header"><h2 id="resultTitle">Select or create a trip</h2><span id="resultBadge"
+                                                                                            class="badge">idle</span>
+            </div>
+            <div class="card-body" id="resultBody">
+                <div class="empty"><b>Hierarchical teams demo</b><br>TripManager delegates via <code>Command</code> to
+                    Flight → Hotel → Itinerary subgraphs. Each subgraph is its own <code>StateGraph</code> with <code>Search
+                        → Filter → Rank</code>. Checkpoint <code>thread_id</code> pauses before <code>summarize</code>
+                    for you to refine.
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="mapCard" style="display:none">
+            <div class="card-header"><h2>Live map — hotels & activities (OSM)</h2><span
+                    class="badge live">Overpass</span></div>
+            <div class="card-body">
+                <div id="map"></div>
+                <div class="hint" id="mapHint"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="globalOverlay" class="global-overlay" aria-hidden="true">
+    <div class="global-overlay-backdrop"></div>
+    <div class="global-overlay-card">
+        <div class="overlay-spinner"></div>
+        <div id="overlayTitle" class="overlay-title">Working…</div>
+        <div id="overlaySub" class="overlay-sub">Please wait — calling live APIs</div>
+        <div class="overlay-steps">
+            <span>✈ Flight</span><span>🏨 Hotel</span><span>🗺 Itinerary</span><span>✨ Summarize</span></div>
+    </div>
+</div>
+
+<script>
+    const $ = id => document.getElementById(id);
+    const fmtINR = n => '₹' + Number(n).toLocaleString('en-IN');
+    let selectedTrip = null;
+    let tripsCache = [];
+    let map, markers = [];
+
+    // --- All valid airports — typeahead dataset (India + major global, 90+) ---
+    const AIRPORTS = [
+        {code: "DEL", city: "Delhi", name: "Indira Gandhi International", country: "India"},
+        {code: "BOM", city: "Mumbai", name: "Chhatrapati Shivaji Maharaj International", country: "India"},
+        {code: "BLR", city: "Bengaluru", name: "Kempegowda International", country: "India"},
+        {code: "MAA", city: "Chennai", name: "Chennai International", country: "India"},
+        {code: "CCU", city: "Kolkata", name: "Netaji Subhas Chandra Bose International", country: "India"},
+        {code: "HYD", city: "Hyderabad", name: "Rajiv Gandhi International", country: "India"},
+        {code: "GOI", city: "Goa", name: "Dabolim Airport", country: "India"},
+        {code: "GOX", city: "Goa", name: "Manohar International (Mopa)", country: "India"},
+        {code: "GOA", city: "Goa", name: "Goa (generic — maps to GOI)", country: "India"},
+        {code: "PNQ", city: "Pune", name: "Pune Airport", country: "India"},
+        {code: "AMD", city: "Ahmedabad", name: "Sardar Vallabhbhai Patel International", country: "India"},
+        {code: "COK", city: "Kochi", name: "Cochin International", country: "India"},
+        {code: "TRV", city: "Thiruvananthapuram", name: "Trivandrum International", country: "India"},
+        {code: "NAG", city: "Nagpur", name: "Dr. Babasaheb Ambedkar International", country: "India"},
+        {code: "JAI", city: "Jaipur", name: "Jaipur International", country: "India"},
+        {code: "LKO", city: "Lucknow", name: "Chaudhary Charan Singh International", country: "India"},
+        {code: "PAT", city: "Patna", name: "Jay Prakash Narayan", country: "India"},
+        {code: "BBI", city: "Bhubaneswar", name: "Biju Patnaik International", country: "India"},
+        {code: "IXC", city: "Chandigarh", name: "Shaheed Bhagat Singh International", country: "India"},
+        {code: "IXB", city: "Bagdogra", name: "Bagdogra Airport", country: "India"},
+        {code: "GAU", city: "Guwahati", name: "Lokpriya Gopinath Bordoloi International", country: "India"},
+        {code: "IMF", city: "Imphal", name: "Imphal International", country: "India"},
+        {code: "IXR", city: "Ranchi", name: "Birsa Munda Airport", country: "India"},
+        {code: "RPR", city: "Raipur", name: "Swami Vivekananda Airport", country: "India"},
+        {code: "UDR", city: "Udaipur", name: "Maharana Pratap Airport", country: "India"},
+        {code: "JDH", city: "Jodhpur", name: "Jodhpur Airport", country: "India"},
+        {code: "VNS", city: "Varanasi", name: "Lal Bahadur Shastri International", country: "India"},
+        {code: "IXJ", city: "Jammu", name: "Jammu Airport", country: "India"},
+        {code: "SXR", city: "Srinagar", name: "Sheikh ul-Alam International", country: "India"},
+        {code: "IXE", city: "Mangalore", name: "Mangaluru International", country: "India"},
+        {code: "IXM", city: "Madurai", name: "Madurai Airport", country: "India"},
+        {code: "TIR", city: "Tirupati", name: "Tirupati Airport", country: "India"},
+        {code: "VIZ", city: "Visakhapatnam", name: "Visakhapatnam International", country: "India"},
+        {code: "IXZ", city: "Port Blair", name: "Veer Savarkar International", country: "India"},
+        {code: "IXA", city: "Agartala", name: "Maharaja Bir Bikram Airport", country: "India"},
+        {code: "IXD", city: "Allahabad", name: "Prayagraj Airport", country: "India"},
+        {code: "HBX", city: "Hubli", name: "Hubli Airport", country: "India"},
+        {code: "JAI", city: "Jaipur", name: "Jaipur International", country: "India"},
+        {code: "IDR", city: "Indore", name: "Devi Ahilyabai Holkar Airport", country: "India"},
+        {code: "JLR", city: "Jabalpur", name: "Jabalpur Airport", country: "India"},
+        {code: "CNN", city: "Kannur", name: "Kannur International", country: "India"},
+        {code: "CCJ", city: "Kozhikode", name: "Calicut International", country: "India"},
+        {code: "STV", city: "Surat", name: "Surat Airport", country: "India"},
+        {code: "VTZ", city: "Visakhapatnam", name: "Visakhapatnam", country: "India"},
+        {code: "DXB", city: "Dubai", name: "Dubai International", country: "UAE"},
+        {code: "SIN", city: "Singapore", name: "Changi Airport", country: "Singapore"},
+        {code: "DOH", city: "Doha", name: "Hamad International", country: "Qatar"},
+        {code: "BKK", city: "Bangkok", name: "Suvarnabhumi", country: "Thailand"},
+        {code: "KUL", city: "Kuala Lumpur", name: "Kuala Lumpur International", country: "Malaysia"},
+        {code: "HND", city: "Tokyo", name: "Haneda Airport", country: "Japan"},
+        {code: "NRT", city: "Tokyo", name: "Narita International", country: "Japan"},
+        {code: "ICN", city: "Seoul", name: "Incheon International", country: "South Korea"},
+        {code: "LHR", city: "London", name: "Heathrow", country: "UK"},
+        {code: "CDG", city: "Paris", name: "Charles de Gaulle", country: "France"},
+        {code: "FRA", city: "Frankfurt", name: "Frankfurt Airport", country: "Germany"},
+        {code: "AMS", city: "Amsterdam", name: "Schiphol", country: "Netherlands"},
+        {code: "IST", city: "Istanbul", name: "Istanbul Airport", country: "Turkey"},
+        {code: "JFK", city: "New York", name: "JFK International", country: "USA"},
+        {code: "LAX", city: "Los Angeles", name: "LAX International", country: "USA"},
+        {code: "SFO", city: "San Francisco", name: "San Francisco International", country: "USA"},
+        {code: "ORD", city: "Chicago", name: "O'Hare International", country: "USA"},
+        {code: "YYZ", city: "Toronto", name: "Pearson International", country: "Canada"},
+        {code: "YVR", city: "Vancouver", name: "Vancouver International", country: "Canada"},
+        {code: "SYD", city: "Sydney", name: "Sydney Airport", country: "Australia"},
+        {code: "MEL", city: "Melbourne", name: "Melbourne Airport", country: "Australia"},
+        {code: "JNB", city: "Johannesburg", name: "O.R. Tambo International", country: "South Africa"},
+        {code: "CPT", city: "Cape Town", name: "Cape Town International", country: "South Africa"},
+        {code: "KTM", city: "Kathmandu", name: "Tribhuvan International", country: "Nepal"},
+        {code: "CMB", city: "Colombo", name: "Bandaranaike International", country: "Sri Lanka"},
+        {code: "MLE", city: "Male", name: "Velana International", country: "Maldives"},
+        {code: "DAC", city: "Dhaka", name: "Hazrat Shahjalal International", country: "Bangladesh"},
+    ];
+
+    function setupTypeahead(inputId, suggestId, hintId) {
+        const input = $(inputId), box = $(suggestId), hint = $(hintId);
+        let activeIndex = -1;
+
+        function filter(q) {
+            q = (q || '').trim().toLowerCase();
+            if (!q) return AIRPORTS.slice(0, 8);
+            const scored = AIRPORTS.map(a => {
+                const code = a.code.toLowerCase(), city = a.city.toLowerCase(), name = a.name.toLowerCase(),
+                    country = a.country.toLowerCase();
+                let score = 99;
+                if (code === q) score = 0;
+                else if (code.startsWith(q)) score = 1;
+                else if (city === q) score = 2;
+                else if (city.startsWith(q)) score = 3;
+                else if (city.includes(q)) score = 4;
+                else if (name.toLowerCase().includes(q)) score = 5;
+                else if (country.includes(q)) score = 6;
+                else return null;
+                return {a, score};
+            }).filter(Boolean).sort((x, y) => x.score - y.score).slice(0, 8).map(x => x.a);
+            return scored;
+        }
+
+        function render(list) {
+            if (!list.length) {
+                box.classList.remove('open');
+                box.innerHTML = '';
+                return;
+            }
+            box.innerHTML = list.map(a => `<div class="suggest-item" data-code="${a.code}"><span><b>${a.code}</b> — ${a.city} <small>${a.name}</small></span><small>${a.country}</small></div>`).join('');
+            box.classList.add('open');
+            box.querySelectorAll('.suggest-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    input.value = el.dataset.code;
+                    box.classList.remove('open');
+                    hint.textContent = AIRPORTS.find(x => x.code === el.dataset.code)?.name || '';
+                    input.dispatchEvent(new Event('change'));
+                });
+            });
+        }
+
+        function updateHint() {
+            const code = parseIATA(input.value);
+            const found = AIRPORTS.find(a => a.code === code);
+            hint.textContent = found ? `${found.city} — ${found.name} (${found.country})` : (code.length >= 2 ? `IATA: ${code}` : '');
+        }
+
+        input.addEventListener('input', () => {
+            const list = filter(input.value);
+            render(list);
+            activeIndex = -1;
+            updateHint();
+        });
+        input.addEventListener('focus', () => {
+            render(filter(input.value));
+            updateHint();
+        });
+        input.addEventListener('keydown', e => {
+            const items = box.querySelectorAll('.suggest-item');
+            if (!box.classList.contains('open')) return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIndex = Math.min(activeIndex + 1, items.length - 1);
+                items.forEach((el, i) => el.classList.toggle('active', i === activeIndex));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = Math.max(activeIndex - 1, 0);
+                items.forEach((el, i) => el.classList.toggle('active', i === activeIndex));
+            } else if (e.key === 'Enter') {
+                if (activeIndex >= 0 && items[activeIndex]) {
+                    e.preventDefault();
+                    items[activeIndex].click();
+                }
+            } else if (e.key === 'Escape') {
+                box.classList.remove('open');
+            }
+        });
+        input.addEventListener('change', updateHint);
+        input.addEventListener('blur', () => setTimeout(() => box.classList.remove('open'), 150));
+        // initial hint
+        updateHint();
+    }
+
+    function parseIATA(v) {
+        if (!v) return '';
+        v = v.trim().toUpperCase();
+        // if contains — or -, take first token
+        const first = v.split('—')[0].split('-')[0].split(' ')[0].trim();
+        // if first token is 3 letters and matches airport, use it
+        if (/^[A-Z]{3}$/.test(first)) return first;
+        // try match by city/name
+        const found = AIRPORTS.find(a => a.city.toUpperCase() === v || a.name.toUpperCase() === v);
+        if (found) return found.code;
+        return first.slice(0, 3);
+    }
+
+    setupTypeahead('origin', 'originSuggest', 'originHint');
+    setupTypeahead('destination', 'destinationSuggest', 'destinationHint');
+    // set defaults
+    $('origin').value = 'DEL';
+    $('destination').value = 'GOA';
+    $('origin').dispatchEvent(new Event('change'));
+    $('destination').dispatchEvent(new Event('change'));
+
+    function toast(msg, type) {
+        const c = $('toast');
+        const d = document.createElement('div');
+        d.className = 'toast-msg' + (type === 'err' ? ' err' : type === 'ok' ? ' ok' : '');
+        d.textContent = msg;
+        c.appendChild(d);
+        setTimeout(() => d.remove(), 4200);
+    }
+
+    function showOverlay(title, sub) {
+        $('overlayTitle').textContent = title || 'Working…';
+        $('overlaySub').textContent = sub || 'Please wait — calling live APIs';
+        $('globalOverlay').style.display = 'flex';
+        $('globalOverlay').setAttribute('aria-hidden', 'false');
+    }
+
+    function hideOverlay() {
+        $('globalOverlay').style.display = 'none';
+        $('globalOverlay').setAttribute('aria-hidden', 'true');
+    }
+
+    function setBtnLoading(btn, on, loadingText) {
+        if (!btn) return;
+        if (on) {
+            btn.dataset.origText = btn.innerHTML;
+            btn.disabled = true;
+            btn.classList.add('btn-loading');
+            btn.innerHTML = `<span class="spinner"></span><span>${loadingText || 'Working…'}</span>`;
+        } else {
+            btn.disabled = false;
+            btn.classList.remove('btn-loading');
+            if (btn.dataset.origText) btn.innerHTML = btn.dataset.origText;
+        }
+    }
+
+    function setCardLoading(id, on) {
+        const el = $(id);
+        if (!el) return;
+        if (on) el.classList.add('loading');
+        else el.classList.remove('loading');
+    }
+
+    function setQuery(t) {
+        $('refineQuery').value = t;
+    }
+
+    function updatePrefsRaw() {
+        const prefs = {};
+        if ($('prefNonstop').checked) prefs.prefer_nonstop = true;
+        if ($('prefCheap').checked) prefs.prefer_cheap = true;
+        if ($('prefLuxury').checked) prefs.prefer_luxury = true;
+        const interests = [...document.querySelectorAll('.interest:checked')].map(e => e.value);
+        if (interests.length) prefs.interests = interests;
+        if ($('prefCulture').checked && !prefs.interests) prefs.interests = ['culture'];
+        $('prefsRaw').value = JSON.stringify(prefs, null, 2);
+    }
+
+    ['prefNonstop', 'prefCheap', 'prefLuxury', 'prefCulture'].forEach(id => $(id).addEventListener('change', updatePrefsRaw));
+    document.querySelectorAll('.interest').forEach(e => e.addEventListener('change', updatePrefsRaw));
+    $('budget').addEventListener('input', e => $('budgetVal').textContent = fmtINR(e.target.value));
+
+    function fillExample() {
+        $('origin').value = 'DEL';
+        $('destination').value = 'GOA';
+        const a = new Date();
+        a.setDate(a.getDate() + 7);
+        const b = new Date(a);
+        b.setDate(a.getDate() + 4);
+        $('start_date').value = a.toISOString().slice(0, 10);
+        $('end_date').value = b.toISOString().slice(0, 10);
+        $('budget').value = 20000;
+        $('budgetVal').textContent = fmtINR(20000);
+        $('travelers').value = 2;
+        updatePrefsRaw();
+        $('origin').dispatchEvent(new Event('change'));
+        $('destination').dispatchEvent(new Event('change'));
+    }
+
+    (function initDates() {
+        const a = new Date();
+        a.setDate(a.getDate() + 7);
+        const b = new Date(a);
+        b.setDate(a.getDate() + 4);
+        if (!$('start_date').value) $('start_date').value = a.toISOString().slice(0, 10);
+        if (!$('end_date').value) $('end_date').value = b.toISOString().slice(0, 10);
+        updatePrefsRaw();
+    })();
+
+    async function checkHealth() {
+        try {
+            const r = await fetch('/api/health');
+            const j = await r.json();
+            const ok = j.gemini_configured;
+            $('healthDot').className = 'dot ' + (ok ? 'ok' : 'bad');
+            $('healthText').textContent = (ok ? 'Gemini ✓' : 'Gemini missing') + ' • ' + j.checkpointer + ' • live APIs';
+        } catch (e) {
+            $('healthDot').className = 'dot bad';
+            $('healthText').textContent = 'Health check failed';
+        }
+    }
+
+    checkHealth();
+    setInterval(checkHealth, 30000);
+
+    function renderMarkdown(md) {
+        if (!md) return '';
+        return md.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/^###### (.*)$/gm, '<h6>$1</h6>').replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>').replace(/^- (.*)$/gm, '• $1').replace(/\n/g, '<br>');
+    }
+
+    function tabsHtml(trip) {
+        return `<div class="tabs">
+    <div class="tab active" data-tab="flights">Flights (${trip.flights?.length || 0})</div>
+    <div class="tab" data-tab="hotels">Hotels (${trip.hotels?.length || 0})</div>
+    <div class="tab" data-tab="itinerary">Itinerary</div>
+    <div class="tab" data-tab="summary">Summary</div>
+    <div class="tab" data-tab="raw">Raw</div>
+  </div>`;
+    }
+
+    function flightsHtml(flights) {
+        if (!flights?.length) return `<div class="empty">No live flights found — OpenSky may be empty for this route.</div>`;
+        return flights.map(f => `<div class="flight">
+    <div class="flight-main"><b>${f.airline || 'LiveAir'} • ${f.flight_id}</b> <span class="badge live">${f.source || 'live'}</span><div class="flight-meta">${f.origin} → ${f.destination} • ${f.departure}–${f.arrival} • ${f.duration_min} min • ${f.stops ? f.stops + ' stop' : 'non-stop'}</div></div>
+    <div style="text-align:right"><div class="price">${fmtINR(f.price)}</div><div class="flight-meta">per traveler</div></div>
+  </div>`).join('');
+    }
+
+    function hotelsHtml(hotels) {
+        if (!hotels?.length) return `<div class="empty">No live hotels — Overpass returned empty.</div>`;
+        return hotels.map(h => `<div class="hotel">
+    <div class="hotel-main"><b>${h.name}</b> <span class="stars">${'★'.repeat(Math.round(h.rating))}</span> <span class="badge">${h.rating}/5</span><div class="hotel-meta">${h.destination} • ${h.amenities?.join(', ')}${h.source ? ' • <span class=badge live>' + h.source + '</span>' : ''}</div></div>
+    <div style="text-align:right"><div class="price">${fmtINR(h.price_per_night)}</div><div class="hotel-meta">/ night</div></div>
+  </div>`).join('');
+    }
+
+    function itineraryHtml(it) {
+        if (!it || !it.daily_plan) return `<div class="empty">No itinerary yet.</div>`;
+        const total = it.total_activities_cost;
+        const ok = it.budget_ok;
+        let html = `<div style="display:flex;justify-content:space-between;align-items:center"><span class="badge ${ok ? 'ok' : ''}">${ok ? 'Budget OK' : 'Budget high'}</span><span style="font-weight:700">${fmtINR(total)} total • ${it.days} days</span></div><div class="timeline">`;
+        for (const day of it.daily_plan) {
+            html += `<div class="day"><h4>Day ${day.day} — ${fmtINR(day.day_cost)}</h4>`;
+            for (const a of (day.activities || [])) {
+                html += `<div class="activity"><span><b>${a.name}</b> <span class="badge">${a.category}</span> ${a.kind ? '<span class=badge live>' + a.kind + '</span>' : ''}<br><span style="font-size:11px;color:#64748b">${a.duration_hours}h • ${a.source || 'live'}</span></span><span style="font-weight:700">${fmtINR(a.cost)}</span></div>`;
+            }
+            if (!day.activities?.length) html += `<div class="hint">Free day — no activities</div>`;
+            html += `</div>`;
+        }
+        html += `</div>`;
+        return html;
+    }
+
+    function ensureMap() {
+        if (map) return;
+        map = L.map('map', {zoomControl: true}).setView([20.59, 78.96], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '© OpenStreetMap (Overpass live)'}).addTo(map);
+    }
+
+    function showMap(trip) {
+        $('mapCard').style.display = 'block';
+        ensureMap();
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+        const points = [];
+        (trip.hotels || []).forEach(h => {
+            if (h.lat && h.lon) {
+                const m = L.marker([h.lat, h.lon]).addTo(map).bindPopup(`<b>${h.name}</b><br>Hotel • ${h.rating}★`);
+                markers.push(m);
+                points.push([h.lat, h.lon]);
+            }
+        });
+        (trip.itinerary?.daily_plan || []).forEach(d => (d.activities || []).forEach(a => {
+            if (a.lat && a.lon) {
+                const m = L.circleMarker([a.lat, a.lon], {
+                    radius: 6,
+                    color: '#2563eb',
+                    fillColor: '#2563eb',
+                    fillOpacity: .9
+                }).addTo(map).bindPopup(`<b>${a.name}</b><br>${a.category}`);
+                markers.push(m);
+                points.push([a.lat, a.lon]);
+            }
+        }));
+        if (points.length) {
+            const b = L.latLngBounds(points);
+            map.fitBounds(b.pad(0.25));
+            $('mapHint').textContent = points.length + ' live points from Overpass (hotels + activities)';
+        } else {
+            map.setView([20.59, 78.96], 5);
+            $('mapHint').textContent = 'No coordinates — itinerary still live but map empty';
+        }
+        setTimeout(() => map.invalidateSize(), 200);
+    }
+
+    function selectTrip(t) {
+        selectedTrip = t;
+        $('refineId').value = t.id;
+        $('selectedTripInfo').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><b>#${t.id} ${t.origin}→${t.destination}</b><span class="badge ${t.status === 'awaiting_refine' ? 'await' : t.status === 'completed' ? 'ok' : ''}">${t.status}</span></div><div class="kv">thread <code>${t.thread_id}</code> • ${t.start_date}→${t.end_date} • ${fmtINR(t.budget)} • ${t.travelers} traveler(s)</div>`;
+        renderTrip(t);
+    }
+
+    function renderTrip(trip) {
+        $('resultTitle').textContent = `#${trip.id} ${trip.origin} → ${trip.destination} • ${trip.start_date} → ${trip.end_date}`;
+        $('resultBadge').textContent = trip.status;
+        $('resultBadge').className = 'badge ' + (trip.status === 'awaiting_refine' ? 'await' : trip.status === 'completed' ? 'ok' : '');
+        const html = tabsHtml(trip)
+            + `<div id="pane-flights" class="tabpane active">${flightsHtml(trip.flights)}</div>`
+            + `<div id="pane-hotels" class="tabpane">${hotelsHtml(trip.hotels)}</div>`
+            + `<div id="pane-itinerary" class="tabpane">${itineraryHtml(trip.itinerary)}</div>`
+            + `<div id="pane-summary" class="tabpane"><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px">${renderMarkdown(trip.final_response) || '<span class=hint>' + (trip.status === 'awaiting_refine' ? 'Paused before <code>summarize</code> — hit Refine/Resume to run Gemini summary.' : 'No summary yet.') + '</span>'}</div><div class="kv" style="margin-top:8px"><span>thread <code>${trip.thread_id}</code> <button class=btn-ghost btn-sm onclick="navigator.clipboard.writeText('${trip.thread_id}');toast('Copied thread_id','ok')">copy</button></span><span>${trip.travelers} traveler(s)</span><span>${Object.keys(trip.preferences || {}).length} prefs</span></div></div>`
+            + `<div id="pane-raw" class="tabpane"><pre>${JSON.stringify(trip, null, 2)}</pre></div>`;
+        $('resultBody').innerHTML = html;
+        $('resultBody').querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                $('resultBody').querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+                $('resultBody').querySelectorAll('.tabpane').forEach(x => x.classList.remove('active'));
+                tab.classList.add('active');
+                $('pane-' + tab.dataset.tab).classList.add('active');
+            });
+        });
+        showMap(trip);
+        $('resultCard').scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+
+    async function createTrip() {
+        let prefs;
+        try {
+            prefs = JSON.parse($('prefsRaw').value || '{}');
+        } catch (e) {
+            toast('Invalid Preferences JSON: ' + e.message, 'err');
+            return;
+        }
+        const origin = parseIATA($('origin').value), destination = parseIATA($('destination').value);
+        if (!origin || !destination) {
+            toast('Pick valid origin/destination (type to select)', 'err');
+            return;
+        }
+        if (origin === destination) {
+            toast('Origin and destination must differ', 'err');
+            return;
+        }
+        if (!$('start_date').value || !$('end_date').value) {
+            toast('Pick dates', 'err');
+            return;
+        }
+        const body = {
+            origin, destination,
+            start_date: $('start_date').value, end_date: $('end_date').value,
+            budget: Number($('budget').value), travelers: Number($('travelers').value),
+            preferences: prefs
+        };
+        if ($('threadId').value) body.thread_id = $('threadId').value;
+        const btn = $('createBtn');
+        setBtnLoading(btn, true, 'Searching live…');
+        setCardLoading('createCard', true);
+        setCardLoading('resultCard', true);
+        showOverlay('Planning your trip…', `${origin} → ${destination} • Live search via Nominatim + Overpass + OpenSky + Gemini (up to 20s)`);
+        $('resultBadge').textContent = 'loading…';
+        $('resultBadge').classList.add('pulse');
+        try {
+            const r = await fetch('/api/trips', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            });
+            const j = await r.json();
+            if (!r.ok) throw new Error(j.detail || JSON.stringify(j));
+            toast(`Created #${j.id} — ${j.status} • ${j.flights.length} flights live`, 'ok');
+            selectTrip(j);
+            loadHistory();
+        } catch (e) {
+            toast(e.message, 'err');
+            $('resultBody').innerHTML = `<div class="empty" style="color:#dc2626">Error: ${e.message}<br><span class=hint>Tip: check /api/health — Gemini key required, Overpass may be slow (retry).</span></div>`;
+        } finally {
+            setBtnLoading(btn, false);
+            setCardLoading('createCard', false);
+            setCardLoading('resultCard', false);
+            hideOverlay();
+            $('resultBadge').classList.remove('pulse');
+        }
+    }
+
+    async function refineTrip() {
+        const id = $('refineId').value;
+        if (!id) return toast('Enter Trip ID', 'err');
+        let p = null;
+        try {
+            p = JSON.parse($('refinePrefs').value || 'null');
+        } catch (e) {
+            return toast('Invalid patch JSON', 'err');
+        }
+        const body = {};
+        if ($('refineBudget').value) body.budget = Number($('refineBudget').value);
+        if (p) body.preferences = p;
+        if ($('refineQuery').value) body.refinement_query = $('refineQuery').value;
+        const btn = $('refineBtn');
+        setBtnLoading(btn, true, 'Refining…');
+        setCardLoading('resultCard', true);
+        showOverlay('Refining trip #' + id + '…', 'Re-ranking flights & hotels (Filter → Rank) + resuming checkpoint before summarize');
+        try {
+            const r = await fetch(`/api/trips/${id}/refine`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            });
+            const j = await r.json();
+            if (!r.ok) throw new Error(j.detail || JSON.stringify(j));
+            toast(`Refined #${j.id} → ${j.status}`, 'ok');
+            selectTrip(j);
+            loadHistory();
+        } catch (e) {
+            toast(e.message, 'err');
+        } finally {
+            setBtnLoading(btn, false);
+            setCardLoading('resultCard', false);
+            hideOverlay();
+        }
+    }
+
+    async function resumeTrip() {
+        const id = $('refineId').value;
+        if (!id) return toast('Enter Trip ID', 'err');
+        const t = tripsCache.find(x => String(x.id) === String(id));
+        if (!t) return toast('Load history first to get thread_id', 'err');
+        const btn = $('resumeBtn');
+        setBtnLoading(btn, true, 'Resuming…');
+        setCardLoading('resultCard', true);
+        showOverlay('Resuming checkpoint…', `Thread ${t.thread_id} — running summarize (Gemini)`);
+        try {
+            const r = await fetch(`/api/trips/${id}/resume?thread_id=${encodeURIComponent(t.thread_id)}`, {method: 'POST'});
+            const j = await r.json();
+            if (!r.ok) throw new Error(j.detail || JSON.stringify(j));
+            toast(`Resumed #${j.id}`, 'ok');
+            selectTrip(j);
+            loadHistory();
+        } catch (e) {
+            toast(e.message, 'err');
+        } finally {
+            setBtnLoading(btn, false);
+            setCardLoading('resultCard', false);
+            hideOverlay();
+        }
+    }
+
+    async function loadHistory() {
+        const btn = $('historyRefreshBtn');
+        setBtnLoading(btn, true, 'Loading…');
+        try {
+            const r = await fetch('/api/trips?limit=30');
+            const j = await r.json();
+            tripsCache = j.items || [];
+            const el = $('historyBody');
+            if (!tripsCache.length) {
+                el.innerHTML = '<div class="empty">No trips yet — create one.</div>';
+                return;
+            }
+            el.innerHTML = tripsCache.map(t => `<div class="history-item" data-id="${t.id}" onclick="clickHistory(${t.id})">
+      <div style="display:flex;justify-content:space-between;align-items:center"><b>#${t.id} ${t.origin}→${t.destination}</b><span class="badge ${t.status === 'awaiting_refine' ? 'await' : t.status === 'completed' ? 'ok' : ''}">${t.status}</span></div>
+      <div class="kv"><span>${t.start_date}→${t.end_date}</span><span>${fmtINR(t.budget)}</span><span>${t.flights?.length || 0} flights</span><span>${t.hotels?.length || 0} hotels</span></div>
+      <div class="kv"><span>${t.travelers} travelers</span><span>${t.thread_id}</span></div>
+    </div>`).join('') + `<div class="hint" style="margin-top:8px">Click a row to load • thread_id resumes checkpoint</div>`;
+        } catch (e) {
+            toast('Failed to load history: ' + e.message, 'err');
+        } finally {
+            setBtnLoading(btn, false);
+        }
+    }
+
+    function clickHistory(id) {
+        const t = tripsCache.find(x => x.id === id);
+        if (t) selectTrip(t);
+        document.querySelectorAll('.history-item').forEach(el => el.classList.toggle('active', Number(el.dataset.id) === id));
+    }
+
+    async function clearHistory() {
+        if (!confirm('Clear all trips?')) return;
+        const btn = $('historyClearBtn');
+        setBtnLoading(btn, true, 'Clearing…');
+        showOverlay('Clearing history…', 'Removing all trips');
+        try {
+            await fetch('/api/trips', {method: 'DELETE'});
+            await loadHistory();
+            toast('Cleared', 'ok');
+            $('resultBody').innerHTML = '<div class="empty">History cleared.</div>';
+            $('mapCard').style.display = 'none';
+        } catch (e) {
+            toast(e.message, 'err');
+        } finally {
+            setBtnLoading(btn, false);
+            hideOverlay();
+        }
+    }
+
+    loadHistory();
+</script>
+</body>
+</html>
